@@ -1,0 +1,9 @@
+{
+    "python.defaultInterpreterPath": "/home/jimmmy/.venv-py38/bin/python",
+    "workbench.tree.indent": 20,
+    "workbench.tree.renderIndentGuides": "always",
+    "workbench.colorCustomizations": {
+        "tree.indentGuidesStroke": "#dedfe7"
+    },
+    "workbench.colorTheme": "Default Dark Modern",
+}

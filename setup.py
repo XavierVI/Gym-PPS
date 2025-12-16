@@ -43,10 +43,10 @@ setup(
     packages=[package for package in find_packages() if package.startswith("gym")],
     zip_safe=False,
     install_requires=[
-        "numpy==1.18.0",
+        "numpy>=1.18.0",
         "cloudpickle>=1.2.0",
-        "setuptools==57.5.0",
-        "pyglet==1.5.27"
+        "setuptools==56.0.0",
+        "pyglet==1.5.27",
     ],
     extras_require=extras,
     package_data={
@@ -72,4 +72,3 @@ setup(
         "Programming Language :: Python :: 3.9",
     ],
 )
-

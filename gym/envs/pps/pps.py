@@ -5,7 +5,6 @@ from gym import error, spaces, utils
 from .putils import *
 from gym.utils import *
 import numpy as np
-import torch
 import random
 
 class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):

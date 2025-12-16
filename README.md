@@ -1,22 +1,6 @@
 ## Gym-PPS
-<p align="center">
-<a href="https://iopscience.iop.org/article/10.1088/1367-2630/acf33a">
-    <img src="https://img.shields.io/badge/Paper-blue?style=socia&logo=googledocs&logoColor=white&labelColor=grey&color=blue"></a>
-<a href="https://arxiv.org/abs/2308.12624">
-  <img src="https://img.shields.io/badge/arXiv-blue?logo=arxiv&logoColor=white&labelColor=grey&color=blue"></a>
-  
-<a href="https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity">
-  <img src="https://img.shields.io/badge/Maintained%3F-yes-green.svg"></a>
-<a href="https://juleskreuer.eu/citation-badge">
-  <img src="https://api.juleskreuer.eu/citation-badge.php?doi=10.1088/1367-2630/acf33a/"></a>
 
-<a href="https://www.youtube.com/watch?v=Gt9v7cN6FII">
-<img src="https://img.shields.io/badge/Youtube-blue?logo=youtube&logoColor=white&labelColor=grey&color=blue">
-</a>
-<a href="https://www.bilibili.com/video/BV1zp4y1772H/">
-  <img src="https://img.shields.io/badge/dynamic/json?color=ff69b4&label=bilibili&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H"></a>
-
-</p>
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity) [![Citation Badge](https://api.juleskreuer.eu/citation-badge.php?doi=10.1088/1367-2630/acf33a)](https://juleskreuer.eu/citation-badge/) <a href="https://www.youtube.com/watch?v=Gt9v7cN6FII"><img src="https://img.shields.io/badge/Youtube-blue?logo=youtube&logoColor=white&labelColor=grey&color=blue"></a> [![bilibili](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=bilibili&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/)
 
 Gym-PPS is a lightweight Predator-Prey Swarm environment seamlessly integrated into the standard Gym library. Its purpose is to provide a convenient platform for rapidly testing reinforcement learning algorithms and control algorithms utilized in guidance, swarming, or formation tasks. The Bilibili video has reached a milestone of [![bilibili](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=bilibili&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/) views.
 
@@ -40,6 +24,7 @@ python test_pps.py
 ```
 
 A simulation window will pop up as follows:
+
 <table>
   <tr>
     <td><img src="example_pps/sample1.gif" width="100%" alt="Cartesian Mode"/></td>
@@ -52,11 +37,12 @@ A simulation window will pop up as follows:
 </table>
 
 
+
 ## Simple Script to Start
+
 Using Gym-PPS is quite simple: 
 
 ```python
-
 ## Define the Predator-Prey Swarm (PPS) environment
 scenario_name = 'PredatorPreySwarm-v0'  
 
@@ -101,6 +87,7 @@ To customize the parameters of the environment, such as the number of predators 
 ```
 
 You can also directly set or get the environment parameters:
+
 ```python
 n_p = env.get_param('n_p')
 env.set_param('n_p', 10)
@@ -142,27 +129,7 @@ class MyReward(gym.RewardWrapper):
         return reward
 ```
 
-Then you should add the following wrappers in your file which creates environment to customize observations and reward functions 
-```python
-env = MyReward(MyObs(env)) 
-```    
 
-## Train Models
-To train your own network, run `main.py` in NJP_algorithm folder. You can also customize your enviroment using the methods provided.
-
-Then your models will be loaded in models folder. To visualize your models effect, run `testmodel.py` in NJP_algorithm folder.
-
-A trained model will be presented as follows:
-<table>
-  <tr>
-    <td><img src="example_pps/after_evolution.gif" width="100%" alt="After Evolution"/></td>
-    <td><img src="example_pps/confuse_effect.gif" width="100%" alt="Confuse Effect"/></td>
-  </tr>
-  <tr>
-    <td align="center">After Evolution</td>
-    <td align="center">Confuse Effect</td>
-  </tr>
-</table>
 
 ## Parameter List
 
@@ -191,10 +158,9 @@ Below is a list of the parameters that can be customized:
 | size_e                  | size of prey                                              | 0.035         |
 | render_traj             | whether to render trajectories                            | True          |
 
-## Acknowledgements
-This algorithm framework was constructed based on the one from https://github.com/shariqiqbal2810/maddpg-pytorch. We utilized the MADDPG class there to implement multi-agent reinforcement learning.
 
-## Paper  [![Download as PDF Button](https://camo.githubusercontent.com/4b7e2df20c344127c85b210653959ea7cd2ddb1c1862f27c715cd460703e76d3/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f446f776e6c6f616425323061732532305044462d4546333933393f7374796c653d666c6174266c6f676f3d61646f62656163726f626174726561646572266c6f676f436f6c6f723d776869746526636f6c6f723d626c61636b266c6162656c436f6c6f723d656331633234)](https://iopscience.iop.org/article/10.1088/1367-2630/acf33a)
+
+## Paper  <a href ="https://iopscience.iop.org/article/10.1088/1367-2630/acf33a"><img src="https://img.shields.io/badge/Download%20PDF-red"></a>
 
 Gym-PPS appears  first in the paper 
 

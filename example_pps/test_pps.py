@@ -41,4 +41,4 @@ if __name__ == '__main__':
             # a = env.action_space.sample()
 
             s_, r, done, info = env.step(a)
-            s = s_.copy()
+            s = s_
