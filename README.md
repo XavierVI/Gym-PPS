@@ -2,7 +2,7 @@
 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity) [![Citation Badge](https://api.juleskreuer.eu/citation-badge.php?doi=10.1088/1367-2630/acf33a)](https://juleskreuer.eu/citation-badge/) <a href="https://www.youtube.com/watch?v=Gt9v7cN6FII"><img src="https://img.shields.io/badge/Youtube-blue?logo=youtube&logoColor=white&labelColor=grey&color=blue"></a> [![bilibili](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=bilibili&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/)
 
-Gym-PPS is a lightweight Predator-Prey Swarm environment fully compatible with the standard OpenAI Gym interface. It is designed as an efficient platform for rapidly benchmarking reinforcement learning and control algorithms in guidance, swarming, and formation tasks. 🎥 **Milestone:** Our demonstration video on Bilibili has surpassed [![bilibili](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=bilibili&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/) views.
+Gym-PPS is a lightweight Predator-Prey Swarm environment fully compatible with the standard OpenAI Gym interface. It is designed as an efficient platform for rapidly benchmarking reinforcement learning and control algorithms in guidance, swarming, and formation tasks. 🎥 **Milestone:** Our demonstration video on Bilibili has reached [![bilibili](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=bilibili&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/) views.
 
 
 
@@ -104,7 +104,7 @@ You can customize environment parameters, such as the number of predators or the
 }
 ```
 
-Alternatively, you can access or modify these parameters directly within your code:"
+Alternatively, you can access or modify these parameters directly within your code:
 
 ```python
 n_p = env.get_param('n_p')
@@ -207,7 +207,7 @@ cd example_NJP_algorithm
 python main.py
 ```
 
-The training should start immediately. Go grab a coffee but make it an espresso because this won't take long. Afterward, increase `n_e` up to `25`  in `custom_param.json`, then run 
+The training should start immediately. Go grab a coffee, but make it an espresso because this won't take long. Afterward, increase `n_e` up to `25`  in `custom_param.json`, then run 
 
 ```bash
 python evaluate.py
@@ -217,7 +217,7 @@ to see the prey agents embrace the swarm mind:
 
 <div style="text-align: center;">
 
-<table style="width: 50%; margin: 0 auto;">
+<table style="width: 35%; margin: 0 auto;">
   <tr>
     <td><img src="example_NJP_algorithm/animation.gif" width="100%" alt="Training Result" /></td>
   </tr>
