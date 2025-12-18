@@ -81,7 +81,7 @@ def get_window(width, height, display, **kwargs):
 
 
 class Viewer(object):
-    def __init__(self, width, height, display=None):
+    def __init__(self, width, height, display=None, save_frame=False, frame_dir=None):
         display = get_display(display)
 
         self.width = width
@@ -92,7 +92,9 @@ class Viewer(object):
         self.geoms = []
         self.onetime_geoms = []
         self.transform = Transform()
-
+        self.save_frame = save_frame
+        self.frame_dir = frame_dir
+        self.frame_count = 0
         glEnable(GL_BLEND)
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
@@ -145,6 +147,11 @@ class Viewer(object):
             arr = arr[::-1, :, 0:3]
         self.window.flip()
         self.onetime_geoms = []
+        if self.save_frame: 
+            if not os.path.exists(self.frame_dir):
+                os.makedirs(self.frame_dir)
+            pyglet.image.get_buffer_manager().get_color_buffer().save(self.frame_dir+'/'+str(self.frame_count)+'.png')
+            self.frame_count += 1
         return arr if return_rgb_array else self.isopen
 
     # Convenience

@@ -16,4 +16,5 @@ from gym.wrappers.clip_action import ClipAction
 from gym.wrappers.record_episode_statistics import RecordEpisodeStatistics
 from gym.wrappers.record_video import RecordVideo, capped_cubic_video_schedule
 from gym.wrappers.customize_pps import PredatorPreySwarmCustomizer
+from gym.wrappers.customize_pps import CustomObservation, CustomReward, CustomAction
 from gym.wrappers.njp import NJP

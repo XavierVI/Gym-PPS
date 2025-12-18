@@ -2,33 +2,41 @@
 
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity) [![Citation Badge](https://api.juleskreuer.eu/citation-badge.php?doi=10.1088/1367-2630/acf33a)](https://juleskreuer.eu/citation-badge/) <a href="https://www.youtube.com/watch?v=Gt9v7cN6FII"><img src="https://img.shields.io/badge/Youtube-blue?logo=youtube&logoColor=white&labelColor=grey&color=blue"></a> [![bilibili](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=bilibili&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/)
 
-Gym-PPS is a lightweight Predator-Prey Swarm environment seamlessly integrated into the standard Gym library. Its purpose is to provide a convenient platform for rapidly testing reinforcement learning algorithms and control algorithms utilized in guidance, swarming, or formation tasks. The Bilibili video has reached a milestone of [![bilibili](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=bilibili&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/) views.
+Gym-PPS is a lightweight Predator-Prey Swarm environment fully compatible with the standard OpenAI Gym interface. It is designed as an efficient platform for rapidly benchmarking reinforcement learning and control algorithms in guidance, swarming, and formation tasks. 🎥 **Milestone:** Our demonstration video on Bilibili has surpassed [![bilibili](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=bilibili&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/) views.
 
 
 
 ## Usage
 
-Please note that the current version of Gym-PPS supports Python 3.8. Therefore, it is recommended to run the library within a Python 3.8 environment, which can be easily set up using a virtual environment such as `venv`.
+Gym-PPS requires Python 3.8 for optimal performance. To ensure stability and avoid dependency conflicts, we strongly recommend running the library within a dedicated virtual environment. Currently, the library requires manual installation from the source.
 
-We have plans to publish the project on PyPI in the near future. However, at this stage, the library needs to be manually installed.
-
-```bash
-python setup.py install
-```
-
-To quick start, run the following test example:
+Create and activate a Python 3.8 virtual environment:
 
 ```bash
-cd example_pps
-python test_pps.py
+python3.8 -m venv .venv-pps
+source .venv-pps/bin/activate
 ```
 
-A simulation window will pop up as follows:
+Install the library: Navigate to the repository directory and install the package:
+
+```bash
+cd Gym-PPS-main
+pip install .
+```
+
+To verify the installation and run a demo simulation, execute the following test script:
+
+```bash
+cd example_use_pps
+python example1.py
+```
+
+A simulation window will pop up similar to the one shown below:
 
 <table>
   <tr>
-    <td><img src="example_pps/sample1.gif" width="100%" alt="Cartesian Mode"/></td>
-    <td><img src="example_pps/sample2.gif" width="100%" alt="Polar Mode"/></td>
+    <td><img src="example_use_pps/sample1.gif" width="100%" alt="Cartesian Mode"/></td>
+    <td><img src="example_use_pps/sample2.gif" width="100%" alt="Polar Mode"/></td>
   </tr>
   <tr>
     <td align="center">Cartesian Mode</td>
@@ -37,16 +45,19 @@ A simulation window will pop up as follows:
 </table>
 
 
+## Example 1: Quick Start Guide
 
-## Simple Script to Start
+Gym-PPS is designed for ease of use; refer to `example1.py` for a quick demonstration.
 
-Using Gym-PPS is quite simple: 
+```bash
+python example1.py
+```
 
 ```python
 ## Define the Predator-Prey Swarm (PPS) environment
 scenario_name = 'PredatorPreySwarm-v0'  
 
-# customize PPS environment parameters in the .json file
+## customize PPS environment parameters in the .json file
 custom_param = 'custom_param.json'      
 
 ## Make the environment 
@@ -54,39 +65,46 @@ env = gym.make(scenario_name)
 custom_param = os.path.dirname(os.path.realpath(__file__)) + '/' + custom_param
 env = PredatorPreySwarmCustomizer(env, custom_param)
 
-## If NEEDED, Use the following wrappers to customize observations and reward functions 
-# env = MyReward(MyObs(env))       
+if __name__ == '__main__':
 
-n_p = env.get_param('n_p')
-n_e = env.n_e
-s = env.reset()   # (obs_dim, n_peo)
-for step in range(100):
-    env.render( mode='human' )
-    a_pred = np.random.uniform(-1,1,(2, n_p)) 
-    a_prey = np.random.uniform(-1,1,(2, n_e))
-    a = np.concatenate((a_pred, a_prey), axis=-1)
-    s_, r, done, info = env.step(a)
-    s = s_.copy()
+    n_p = env.get_param('n_p')
+    n_e = env.n_e
+    n_pe = env.n_pe
+    print("Number of predators: ", n_p)
+    print("Number of prey: ", n_e)
+    print("Number of total agents: ", n_pe)
+
+    s = env.reset()   # (obs_dim, n_peo)
+    print("Observation space shape: ", s.shape)
+    print("Action space shape: ", env.action_space.shape)
+    
+    for _ in range(1):
+        for step in range(1000):
+            env.render( mode='human' )
+
+            # To separately control 
+            a_pred = np.random.uniform(-1,1,(2, n_p))       # predator action
+            a_prey = np.random.uniform(-1,1,(2, n_e))       # prey action
+            a = np.concatenate((a_pred, a_prey), axis=-1)   # total action
+
+            s_, r, done, info = env.step(a)                 # state, reward, done, info
+            s = s_                                          # update state
 ```
 
-
-
-## Customize Environment
-
-To customize the parameters of the environment, such as the number of predators and the dynamics mode, you can easily specify the desired values in the `custom_param.json` file, as shown below:
+You can customize environment parameters, such as the number of predators or the dynamics mode, by modifying the `custom_param.json` file as shown below:
 
 ```json
 {
     "dynamics_mode": "Polar",
     "n_p": 3,
-    "n_e": 10,
+    "n_e": 20,
     "pursuer_strategy": "random",
     "escaper_strategy": "nearest",
     "is_periodic": true
 }
 ```
 
-You can also directly set or get the environment parameters:
+Alternatively, you can access or modify these parameters directly within your code:"
 
 ```python
 n_p = env.get_param('n_p')
@@ -95,38 +113,139 @@ env.set_param('n_p', 10)
 
 
 
-## Customize Observation or Reward
+## Example 2: Customize Observation, Reward & Action
 
-To customize your own observation or reward functions, modify the functions in `custom_env.py`:
+To customize the observation or reward functions, please modify the definitions in `custom_env.py`. Refer to `example2.py` for guidance.
+
+```bash
+python example2.py
+```
 
 ```python
-class MyObs(gym.ObservationWrapper):
+## Use the following wrappers to customize reward, observation, and action functions 
+env = MyReward(env, custom_param)
+env = MyObs(env, custom_param)  
 
-    def __init__(self, env):
-        super().__init__(env)
-        self.observation_space = spaces.Box(shape=(2, env.n_p+env.n_e), low=-np.inf, high=np.inf)
+class MyObs(CustomObservation):
+
+    # def __init__(self, env, args):
+    #     super().__init__(env, args)
+    #     self.observation_space = spaces.Box(shape=(2, env.n_p+env.n_e), low=-np.inf, high=np.inf)
 
     def observation(self, obs):
         r"""Example::
 
-        n_pe = self.env.n_p + self.env.n_e
-        obs = np.ones((2, n_pe))
-        return obs
+        obs = obs[6:, :]  # for example, remove ego-state
+        # ⚠️ WARNING: Then your algorithm should stick to your own observation space !
 
         """
+        # your code here
+        obs = obs[6:, :]
         return obs
         
 
-class MyReward(gym.RewardWrapper):
+class MyReward(CustomReward):
     
-    def reward(self, reward):
+    def reward(self, observation, reward, action):
         r"""Example::
 
-        reward = np.sum(self.env.is_collide_b2b)
+        reward_p =   5.0 * self.env.is_collide_b2b[self.env.n_p:self.env.n_pe, :self.env.n_p].sum(axis=0, keepdims=True).astype(float)                      
+        reward_e = - 1.0 * self.env.is_collide_b2b[self.env.n_p:self.env.n_pe, :self.env.n_p].sum(axis=1, keepdims=True).astype(float).reshape(1,self.env.n_e)  
+        reward_e -= 0.1 * np.abs( action[[0], self.env.n_p:self.env.n_pe]) + 0.01 * np.abs( action[[1], self.env.n_p:self.env.n_pe])  
+        reward = np.concatenate((reward_p, reward_e), axis=1)
 
         """
-        
+        # your code here
         return reward
+```
+
+
+
+## Example 3: Customize Environment (Advanced)
+
+For more advanced customization, such as adding new methods or functions to the environment, modify the `MyEnv` class directly. See `example3.py` for implementation details.
+
+```bash
+python example3.py
+```
+
+```python
+## Use the following wrapper to customize the environment class
+env = MyEnv(env, custom_param)
+
+class MyEnv(PredatorPreySwarmCustomizer):
+    def __init__(self, env, args):
+        super().__init__(env, args)
+
+    ## example
+    def compute_speed(self):
+        speed = np.sqrt(self.env.dp[[0],:]**2 + self.env.dp[[1],:]**2)
+        return speed
+    
+    def myfunc(self):
+        # define your own function here 
+        # your code here
+        pass
+```
+
+
+
+## Implementation of NJP algorithm
+
+This repository also provides a reference implementation of the MARL algorithm for the PPS environment, adapted from “Predator-prey survival pressure is sufficient to evolve swarming behaviors” *(New Journal of Physics).* 
+
+To train the swarm, first ensure `torch` is installed in the `.venv-pps`
+
+```bash
+pip install torch
+```
+
+Then run
+
+```bash
+cd example_NJP_algorithm
+python main.py
+```
+
+The training should start immediately. Go grab a coffee but make it an espresso because this won't take long. Afterward, increase `n_e` up to `25`  in `custom_param.json`, then run 
+
+```bash
+python evaluate.py
+```
+
+to see the prey agents embrace the swarm mind:
+
+<div style="text-align: center;">
+
+<table style="width: 50%; margin: 0 auto;">
+  <tr>
+    <td><img src="example_NJP_algorithm/animation.gif" width="100%" alt="Training Result" /></td>
+  </tr>
+  <tr>
+    <td align="center">Training Result</td>
+  </tr>
+</table>
+</div>
+
+We hope you enjoy this project. Should you find it helpful for your research, we would appreciate your citation of the following paper, which helps other researchers find us.
+
+
+
+## Paper Information <a href ="https://iopscience.iop.org/article/10.1088/1367-2630/acf33a"><img src="https://img.shields.io/badge/Download%20PDF-red"></a>
+
+Gym-PPS appears first in the paper 
+
+```text
+@article{li2023predator,
+  title={Predator--prey survival pressure is sufficient to evolve swarming behaviors},
+  author={Li, Jianan and Li, Liang and Zhao, Shiyu},
+  journal={New Journal of Physics},
+  volume={25},
+  number={9},
+  pages={092001},
+  year={2023},
+  publisher={IOP Publishing}
+}
 ```
 
 
@@ -157,22 +276,6 @@ Below is a list of the parameters that can be customized:
 | size_p                  | size of predators                                         | 0.06          |
 | size_e                  | size of prey                                              | 0.035         |
 | render_traj             | whether to render trajectories                            | True          |
+| save_frame              | whether to save rendered frame                            | False         |
+| frame_dir               | where to save rendered frame                              | "./frames"    |
 
-
-
-## Paper  <a href ="https://iopscience.iop.org/article/10.1088/1367-2630/acf33a"><img src="https://img.shields.io/badge/Download%20PDF-red"></a>
-
-Gym-PPS appears  first in the paper 
-
-```text
-@article{li2023predator,
-  title={Predator--prey survival pressure is sufficient to evolve swarming behaviors},
-  author={Li, Jianan and Li, Liang and Zhao, Shiyu},
-  journal={New Journal of Physics},
-  volume={25},
-  number={9},
-  pages={092001},
-  year={2023},
-  publisher={IOP Publishing}
-}
-```

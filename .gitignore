@@ -1,5 +1,6 @@
 *.swp
 *.pyc
+__pycache__/
 *.py~
 .DS_Store
 .cache
@@ -37,3 +38,4 @@ tutorial/*.html
 # PyCharm project files
 .idea
 vizdoom.ini
+.vscode/

@@ -93,6 +93,22 @@ class PredatorPreySwarmEnvProp(PredatorPreySwarmEnvParam):
     @n_e.setter
     def n_e(self, value:int):
         self._n_e = value
+
+    @property
+    def n_pe(self):
+        return self._n_pe
+
+    @n_pe.setter
+    def n_pe(self, value:int):
+        self._n_pe = value
+
+    @property
+    def n_peo(self):
+        return self._n_peo
+
+    @n_peo.setter
+    def n_peo(self, value:int):
+        self._n_peo = value
     
     @property
     def is_periodic(self):
@@ -416,6 +432,14 @@ class PredatorPreySwarmEnvProp(PredatorPreySwarmEnvParam):
     @save_frame.setter
     def save_frame(self, value:bool):
         self._save_frame = value
+    
+    @property
+    def frame_dir(self):
+        return self._frame_dir
+
+    @frame_dir.setter
+    def frame_dir(self, value:str):
+        self._frame_dir = value
 
 
     @classmethod

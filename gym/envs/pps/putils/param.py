@@ -83,6 +83,7 @@ class PredatorPreySwarmEnvParam(gym.Env):
     _render_traj = True
     _traj_len = 15
     _save_frame = False
+    _frame_dir = '~/Gym-PPS-Main/example_NJP_algorithm/frames'
 
 
 def get_param():

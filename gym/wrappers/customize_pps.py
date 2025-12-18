@@ -3,7 +3,7 @@ import json
 from typing import Any
 import gym
 import argparse
-
+from abc import abstractmethod
 
 class PredatorPreySwarmCustomizer(gym.Wrapper):
 
@@ -43,3 +43,46 @@ class PredatorPreySwarmCustomizer(gym.Wrapper):
         self.env.__reinit__()
         self.observation_space = self.env.observation_space
         self.action_space = self.env.action_space
+
+
+class CustomObservation(PredatorPreySwarmCustomizer):
+    def reset(self, **kwargs):
+        observation = self.env.reset(**kwargs)
+        return self.observation(observation)
+
+    def step(self, action):
+        observation, reward, done, info = self.env.step(action)
+        return self.observation(observation), reward, done, info
+
+    @abstractmethod
+    def observation(self, observation):
+        raise NotImplementedError
+
+
+class CustomReward(PredatorPreySwarmCustomizer):
+    def reset(self, **kwargs):
+        return self.env.reset(**kwargs)
+
+    def step(self, action):
+        observation, reward, done, info = self.env.step(action)
+        return observation, self.reward(observation, reward, action), done, info
+
+    @abstractmethod
+    def reward(self, observation, reward, action):
+        raise NotImplementedError
+
+
+class CustomAction(PredatorPreySwarmCustomizer):
+    def reset(self, **kwargs):
+        return self.env.reset(**kwargs)
+
+    def step(self, action):
+        return self.env.step(self.action(action))
+
+    @abstractmethod
+    def action(self, action):
+        raise NotImplementedError
+
+    @abstractmethod
+    def reverse_action(self, action):
+        raise NotImplementedError

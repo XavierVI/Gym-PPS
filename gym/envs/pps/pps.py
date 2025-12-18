@@ -215,7 +215,7 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
     def _get_reward(self, a):
 
         reward_p =   5.0 * self._is_collide_b2b[self._n_p:self._n_pe, :self._n_p].sum(axis=0, keepdims=True).astype(float)                      
-        reward_e = - 5.0 * self._is_collide_b2b[self._n_p:self._n_pe, :self._n_p].sum(axis=1, keepdims=True).astype(float).reshape(1,self.n_e)  
+        reward_e = - 1.0 * self._is_collide_b2b[self._n_p:self._n_pe, :self._n_p].sum(axis=1, keepdims=True).astype(float).reshape(1,self.n_e)  
 
         if self._penalize_distance:
             reward_p += - self._d_b2b_center[self._n_p:self._n_pe, :self._n_p].sum(axis=0, keepdims=True)
@@ -226,8 +226,8 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
                 reward_p -= 1*np.sqrt( a[[0],:self._n_p]**2 + a[[1],:self._n_p]**2 )
                 reward_e -= 1*np.sqrt( a[[0], self._n_p:self._n_pe]**2 + a[[1], self._n_p:self._n_pe]**2 )
             elif self._dynamics_mode == 'Polar':
-                reward_p -= 1 * np.abs( a[[0], :self._n_p] ) +         0 * np.abs( a[[1], :self._n_p] )
-                reward_e -= 1 * np.abs( a[[0], self._n_p:self._n_pe]) + 0 * np.abs( a[[1], self._n_p:self._n_pe])     
+                reward_p -= 0.1 * np.abs( a[[0], :self._n_p] ) +         0.01 * np.abs( a[[1], :self._n_p] )
+                reward_e -= 0.1 * np.abs( a[[0], self._n_p:self._n_pe]) + 0.01 * np.abs( a[[1], self._n_p:self._n_pe])        
       
         if self._penalize_collide_agents:
             reward_p -= self._is_collide_b2b[:self._n_p, :self._n_p].sum(axis=0, keepdims=True)
@@ -423,7 +423,7 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
     
         if self.viewer is None:
             from gym.envs.classic_control import rendering
-            self.viewer = rendering.Viewer(500, 500)
+            self.viewer = rendering.Viewer(500, 500, save_frame=self._save_frame, frame_dir=self._frame_dir)
             self.viewer.set_bounds(-1, 1, -1, 1.)
             
             agents = []
