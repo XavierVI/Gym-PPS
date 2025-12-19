@@ -1,10 +1,22 @@
 ## Gym-PPS
 
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity) <a href="https://www.youtube.com/watch?v=Gt9v7cN6FII"><img src="https://img.shields.io/badge/Youtube-blue?logo=youtube&logoColor=white&labelColor=grey&color=blue"></a> [![bilibili](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=bilibili&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/)
+![Maintained](https://img.shields.io/badge/Status-Active-blue?style=flat&logo=starship&color=green) [![YouTube](https://img.shields.io/youtube/views/Gt9v7cN6FII?logo=youtube&color=red&label=YouTube&style=flat)](https://www.youtube.com/watch?v=Gt9v7cN6FII) [![bilibili](https://img.shields.io/badge/dynamic/json?&logo=bilibili&logoColor=white&label=Bilibili&color=red&style=flat&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/) [![DOI](https://img.shields.io/badge/PDF-Download-red.svg?style=flat&logo=readthedocs&logoColor=white&color=blue)](https://iopscience.iop.org/article/10.1088/1367-2630/acf33a) [![Citation Badge](https://img.shields.io/badge/dynamic/json?label=Citations&query=%24.citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2FDOI%3A10.1088%2F1367-2630%2Facf33a%3Ffields%3DcitationCount&color=green&style=flat&logo=semanticscholar)](https://www.semanticscholar.org/paper/10.1088/1367-2630/acf33a)
 
-[![DOI](https://img.shields.io/badge/PDF-Download-red.svg?style=flat)](https://iopscience.iop.org/article/10.1088/1367-2630/acf33a) [![Citation Badge](https://img.shields.io/badge/dynamic/json?label=Citations&query=%24.citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2FDOI%3A10.1088%2F1367-2630%2Facf33a%3Ffields%3DcitationCount&color=blue&style=flat&logo=semanticscholar)](https://www.semanticscholar.org/paper/10.1088/1367-2630/acf33a)
+Gym-PPS is a lightweight **Predator-Prey Swarm (PPS)** environment fully compatible with the standard **OpenAI Gym interface**. It is designed as an efficient platform for rapidly benchmarking **reinforcement learning** and **control** algorithms in guidance, swarming, and formation tasks. 🎥 **Milestone:** Our demonstration video on Bilibili has reached [![bilibili](https://img.shields.io/badge/dynamic/json?color=red&label=&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/) views.
 
-Gym-PPS is a lightweight Predator-Prey Swarm environment fully compatible with the standard OpenAI Gym interface. It is designed as an efficient platform for rapidly benchmarking reinforcement learning and control algorithms in guidance, swarming, and formation tasks. 🎥 **Milestone:** Our demonstration video on Bilibili has reached [![bilibili](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/) views.
+<table style="width: 80%;">
+  <tr>
+    <td align="center" style="width: 33.3%;">
+      <img src="example_use_pps/sample1.gif" alt="Fig1" width="100%">
+    </td>
+    <td align="center" style="width: 33.3%;">
+      <img src="example_NJP_algorithm/animation.gif" alt="Fig2" width="100%">
+    </td>
+     <td align="center" style="width: 33.3%;">
+      <img src="example_use_pps/sample2.gif" alt="Fig3" width="100%">
+    </td>
+  </tr>
+</table>
 
 
 
@@ -35,16 +47,21 @@ python example1.py
 
 A simulation window will pop up similar to the one shown below:
 
-<table>
+<table style="width: 60%;">
   <tr>
-    <td><img src="example_use_pps/sample1.gif" width="100%" alt="Cartesian Mode"/></td>
-    <td><img src="example_use_pps/sample2.gif" width="100%" alt="Polar Mode"/></td>
+    <td align="center" style="width: 50%;">
+      <img src="example_use_pps/sample1.gif" alt="Fig1" width="100%">
+    </td>
+    <td align="center" style="width: 50%;">
+      <img src="example_use_pps/sample2.gif" alt="Fig2" width="100%">
+    </td>
   </tr>
   <tr>
     <td align="center">Cartesian Mode</td>
     <td align="center">Polar Mode</td>
   </tr>
 </table>
+
 
 
 ## Example 1: Quick Start Guide
@@ -218,8 +235,7 @@ python evaluate.py
 to see the prey agents embrace the swarm mind:
 
 <div style="text-align: center;">
-
-<table style="width: 35%; margin: 0 auto;">
+<table style="width: 30%;">
   <tr>
     <td><img src="example_NJP_algorithm/animation.gif" width="100%" alt="Training Result" /></td>
   </tr>
@@ -228,6 +244,7 @@ to see the prey agents embrace the swarm mind:
   </tr>
 </table>
 </div>
+
 
 We hope you enjoy this project. Should you find it helpful for your research, we would appreciate your citation of the following paper, which helps other researchers find us.
 
