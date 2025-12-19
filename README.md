@@ -1,8 +1,10 @@
 ## Gym-PPS
 
-[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity) [![Citation Badge](https://api.juleskreuer.eu/citation-badge.php?doi=10.1088/1367-2630/acf33a)](https://juleskreuer.eu/citation-badge/) <a href="https://www.youtube.com/watch?v=Gt9v7cN6FII"><img src="https://img.shields.io/badge/Youtube-blue?logo=youtube&logoColor=white&labelColor=grey&color=blue"></a> [![bilibili](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=bilibili&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity) <a href="https://www.youtube.com/watch?v=Gt9v7cN6FII"><img src="https://img.shields.io/badge/Youtube-blue?logo=youtube&logoColor=white&labelColor=grey&color=blue"></a> [![bilibili](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=bilibili&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/)
 
-Gym-PPS is a lightweight Predator-Prey Swarm environment fully compatible with the standard OpenAI Gym interface. It is designed as an efficient platform for rapidly benchmarking reinforcement learning and control algorithms in guidance, swarming, and formation tasks. 🎥 **Milestone:** Our demonstration video on Bilibili has reached [![bilibili](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=bilibili&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/) views.
+[![DOI](https://img.shields.io/badge/PDF-Download-red.svg?style=flat)](https://iopscience.iop.org/article/10.1088/1367-2630/acf33a) [![Citation Badge](https://img.shields.io/badge/dynamic/json?label=Citations&query=%24.citationCount&url=https%3A%2F%2Fapi.semanticscholar.org%2Fgraph%2Fv1%2Fpaper%2FDOI%3A10.1088%2F1367-2630%2Facf33a%3Ffields%3DcitationCount&color=blue&style=flat&logo=semanticscholar)](https://www.semanticscholar.org/paper/10.1088/1367-2630/acf33a)
+
+Gym-PPS is a lightweight Predator-Prey Swarm environment fully compatible with the standard OpenAI Gym interface. It is designed as an efficient platform for rapidly benchmarking reinforcement learning and control algorithms in guidance, swarming, and formation tasks. 🎥 **Milestone:** Our demonstration video on Bilibili has reached [![bilibili](https://img.shields.io/badge/dynamic/json?color=ff69b4&label=&query=data.stat.view&url=https%3A%2F%2Fapi.bilibili.com%2Fx%2Fweb-interface%2Fview%3Fbvid%3DBV1zp4y1772H)](https://www.bilibili.com/video/BV1zp4y1772H/) views.
 
 
 
@@ -231,7 +233,7 @@ We hope you enjoy this project. Should you find it helpful for your research, we
 
 
 
-## Paper Information <a href ="https://iopscience.iop.org/article/10.1088/1367-2630/acf33a"><img src="https://img.shields.io/badge/Download%20PDF-red"></a>
+## Paper Information [![DOI](https://img.shields.io/badge/PDF-Download-red.svg?style=flat)](https://iopscience.iop.org/article/10.1088/1367-2630/acf33a)
 
 Gym-PPS appears first in the paper 
 
@@ -278,4 +280,3 @@ Below is a list of the parameters that can be customized:
 | render_traj             | whether to render trajectories                            | True          |
 | save_frame              | whether to save rendered frame                            | False         |
 | frame_dir               | where to save rendered frame                              | "./frames"    |
-
