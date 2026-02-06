@@ -425,7 +425,7 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
     def render(self, mode="human"): 
     
         if self.viewer is None:
-            from gym.envs.classic_control import rendering
+            import gym_pps.envs.rendering as rendering
             self.viewer = rendering.Viewer(500, 500, save_frame=self._save_frame, frame_dir=self._frame_dir)
             self.viewer.set_bounds(-1, 1, -1, 1.)
             

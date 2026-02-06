@@ -88,7 +88,7 @@ def run(config):
         
         for et_i in range(config.episode_length):
             if ep_i % 20 == 0:
-                # env.render()
+                env.render()
                 pass
 
             p_store[:, :, et_i] = env.unwrapped.p
