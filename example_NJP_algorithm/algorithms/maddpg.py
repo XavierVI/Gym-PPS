@@ -179,7 +179,7 @@ class MADDPG(object):
             a.critic.train()
             a.target_policy.train()
             a.target_critic.train()
-        if device == 'gpu':
+        if device == 'gpu' or device == 'cuda':
             fn = lambda x: x.cuda()
         else:
             fn = lambda x: x.cpu()
@@ -203,7 +203,7 @@ class MADDPG(object):
     def prep_rollouts(self, device='cpu'):
         for a in self.agents:
             a.policy.eval()
-        if device == 'gpu':
+        if device == 'gpu' or device == 'cuda':
             fn = lambda x: x.cuda()
         else:
             fn = lambda x: x.cpu()

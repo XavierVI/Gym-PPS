@@ -1,6 +1,6 @@
-import gym
+import gymnasium as gym
+from gym_pps.wrappers import PredatorPreySwarmCustomizer
 import numpy as np
-from gym.wrappers import PredatorPreySwarmCustomizer
 
 class Agent:
     def __init__(self, adversary=False):

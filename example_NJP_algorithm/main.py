@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 from custom_env import NJPEnvironment
 import argparse
 import torch
@@ -23,7 +23,7 @@ env = gym.make(scenario_name)
 custom_param = os.path.dirname(os.path.realpath(__file__)) + '/' + custom_param
 env = NJPEnvironment(env, custom_param)
 
-USE_CUDA = False 
+USE_CUDA = False
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 start_time = time.time()
@@ -91,9 +91,9 @@ def run(config):
             p_store[:, :, et_i] = env.p
             h_store[:, :, et_i] = env.heading
 
-            torch_obs = torch.Tensor(obs).requires_grad_(False)
+            torch_obs = torch.Tensor(obs).to(device).requires_grad_(False)
             torch_agent_actions = maddpg.step(torch_obs, start_stop_num,  explore=True)
-            agent_actions = np.column_stack([ac.data.numpy() for ac in torch_agent_actions])
+            agent_actions = np.column_stack([ac.data.cpu().numpy() for ac in torch_agent_actions])
             next_obs, rewards, dones, infos = env.step(agent_actions)
             agent_buffer.push(obs, agent_actions, rewards, next_obs, dones)
             adversary_buffer.push(obs, agent_actions, rewards, next_obs, dones)
