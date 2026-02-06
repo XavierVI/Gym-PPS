@@ -36,10 +36,11 @@ conda create -n gym-pps
 conda activate gym-pps
 ```
 
-Install the repo as an package
+Install the repo and dependencies
 
 ```bash
 cd Gym-PPS
+pip install gymnasium pyglet tqdm torch pyglet==1.5.27
 pip install -e .
 ```
 
