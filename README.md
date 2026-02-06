@@ -24,18 +24,23 @@ Gym-PPS is a lightweight **Predator-Prey Swarm (PPS)** environment fully compati
 
 Gym-PPS requires Python 3.8 for optimal performance. To ensure stability and avoid dependency conflicts, we strongly recommend running the library within a dedicated virtual environment. Currently, the library requires manual installation from the source.
 
-Create and activate a Python 3.8 virtual environment:
+Create and activate a Python (>3.10) virtual environment (or use a conda environment):
 
 ```bash
-python3.8 -m venv .venv-pps
+# virtual environment
+python3 -m venv .venv-pps
 source .venv-pps/bin/activate
+
+# or
+conda create -n gym-pps
+conda activate gym-pps
 ```
 
-Install the library: Navigate to the repository directory and install the package:
+Install the repo as an package
 
 ```bash
-cd Gym-PPS-main
-pip install .
+cd Gym-PPS
+pip install -e .
 ```
 
 To verify the installation and run a demo simulation, execute the following test script:
