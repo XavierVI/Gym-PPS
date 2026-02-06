@@ -2,7 +2,7 @@ import gymnasium as gym
 
 class PredatorPreySwarmEnvParam(gym.Env):
 
-    metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": 30}
+    metadata = {"render_modes": ["human", "rgb_array"], "render_fps": 30}
 
     # Agent numbers
     _n_p = 3

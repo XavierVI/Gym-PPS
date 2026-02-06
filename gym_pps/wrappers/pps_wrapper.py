@@ -27,22 +27,22 @@ class PredatorPreySwarmCustomizer(gym.Wrapper):
         print('Environment parameter customization finished.')
 
     def set_param(self, name: str, value: Any) -> None:
-        if name not in self.env.param_list:
+        if name not in self.unwrapped.param_list:
             raise KeyError(f"Parameter '{name}' does not exist!"
                            )
-        setattr(self.env, name, value)
+        setattr(self.unwrapped, name, value)
         self.__reinit__()
 
     def get_param(self, name: str) -> Any:
-        if name not in self.env.param_list:
+        if name not in self.unwrapped.param_list:
             raise KeyError(f"Parameter '{name}' does not exist!"
                            )
-        return getattr(self.env, name)
+        return getattr(self.unwrapped, name)
 
     def __reinit__(self):
-        self.env.__reinit__()
-        self.observation_space = self.env.observation_space
-        self.action_space = self.env.action_space
+        self.unwrapped.__reinit__()
+        self.observation_space = self.unwrapped.observation_space
+        self.action_space = self.unwrapped.action_space
 
 
 class CustomObservation(PredatorPreySwarmCustomizer):

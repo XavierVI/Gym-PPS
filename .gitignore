@@ -5,7 +5,7 @@ __pycache__/
 .DS_Store
 .cache
 .pytest_cache/
-
+*.pt
 # Setuptools distribution and build folders.
 /dist/
 /build

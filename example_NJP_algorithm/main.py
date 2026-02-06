@@ -25,7 +25,8 @@ custom_param = os.path.dirname(os.path.realpath(__file__)) + '/' + custom_param
 env = NJPEnvironment(env, custom_param)
 
 USE_CUDA = False
-device = "cuda" if torch.cuda.is_available() else "cpu"
+# device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cpu"
 
 start_time = time.time()
 def run(config):
@@ -73,24 +74,25 @@ def run(config):
                                         ep_i + 1 + config.n_rollout_threads,
                                         config.n_episodes), end='', flush=True)
         episode_reward = 0
-        obs=env.reset()
+        obs, _ = env.reset()
         maddpg.prep_rollouts(device=device) 
         
         maddpg.scale_noise(maddpg.noise, maddpg.epsilon)
         maddpg.reset_noise()
 
-        M_p, N_p = np.shape(env.p)
-        M_h, N_h =np.shape(env.heading)
+        M_p, N_p = np.shape(env.unwrapped.p)
+        M_h, N_h =np.shape(env.unwrapped.heading)
 
         p_store = np.zeros((M_p, N_p, config.episode_length))
         h_store = np.zeros((M_h, N_h, config.episode_length))
         
         for et_i in range(config.episode_length):
             if ep_i % 20 == 0:
-                env.render()
+                # env.render()
+                pass
 
-            p_store[:, :, et_i] = env.p
-            h_store[:, :, et_i] = env.heading
+            p_store[:, :, et_i] = env.unwrapped.p
+            h_store[:, :, et_i] = env.unwrapped.heading
 
             torch_obs = torch.Tensor(obs).to(device).requires_grad_(False)
             torch_agent_actions = maddpg.step(torch_obs, start_stop_num,  explore=True)

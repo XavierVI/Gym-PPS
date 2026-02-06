@@ -69,6 +69,7 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
         self._n_o = 0
         self.viewer = None
         self.seed()
+        self.__reinit__()
 
     
     def __reinit__(self):
@@ -107,7 +108,8 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
         return [seed]
 
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
+        super().reset(seed=seed)
         max_size = np.max(self._size)
         max_respawn_times = 100
         for respawn_time in range (max_respawn_times):
@@ -134,8 +136,10 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
         if self._dynamics_mode == 'Polar': 
             self._theta = np.pi * np.random.uniform(-1,1, (1, self._n_peo))
             # self._theta = np.pi * np.zeros((1, self._n_peo))
-            self._heading = np.concatenate((np.cos(self._theta), np.sin(self._theta)), axis=0)  
-        return self._get_obs()
+            self._heading = np.concatenate((np.cos(self._theta), np.sin(self._theta)), axis=0)
+
+            
+        return self._get_obs(), self._get_info()
 
 
     def _get_obs(self):
@@ -175,10 +179,10 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
 
             if self._dynamics_mode == 'Cartesian':
                 self.obs[:self.obs_dim_pursuer-1, i] = obs_pursuer.T.reshape(-1)       
-                self.obs[self.obs_dim_pursuer-1, i] = 2/self.max_energy_p * self._energy[[0],i] - 1  
+                self.obs[self.obs_dim_pursuer-1, i] = 2/self.max_energy_p * self._energy[0, i] - 1  
             elif self._dynamics_mode == 'Polar':
                 self.obs[:self.obs_dim_pursuer-3, i] = obs_pursuer.T.reshape(-1)       
-                self.obs[self.obs_dim_pursuer-3, i] = 2/self.max_energy_p * self._energy[[0],i] - 1  
+                self.obs[self.obs_dim_pursuer-3, i] = 2/self.max_energy_p * self._energy[0, i] - 1  
                 self.obs[self.obs_dim_pursuer-2:self.obs_dim_pursuer, i] = self._heading[:,i]
 
         for i in range(self._n_p, self._n_pe):
@@ -201,10 +205,10 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
 
             if self._dynamics_mode == 'Cartesian':
                 self.obs[:self.obs_dim_escaper-1, i] = obs_escaper.T.reshape(-1)       
-                self.obs[self.obs_dim_escaper-1,i] = 2/self.max_energy_e * self._energy[[0],i] - 1   
+                self.obs[self.obs_dim_escaper-1,i] = 2/self.max_energy_e * self._energy[0, i] - 1   
             elif self._dynamics_mode == 'Polar':
                 self.obs[:self.obs_dim_escaper-3, i] = obs_escaper.T.reshape(-1)       
-                self.obs[self.obs_dim_escaper-3, i] = 2/self.max_energy_e * self._energy[[0],i] - 1  
+                self.obs[self.obs_dim_escaper-3, i] = 2/self.max_energy_e * self._energy[0, i] - 1  
                 self.obs[self.obs_dim_escaper-2:self.obs_dim_escaper, i] = self._heading[:,i] 
 
         return self.obs
@@ -283,7 +287,8 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
         DoC_gloal = 0
 
         # return np.array( [DoC, DoA, DoC_gloal] ).reshape(3,1)
-        return np.array( [None, None, None] ).reshape(3,1)
+        # return np.array( [None, None, None] ).reshape(3,1)
+        return {'DoC': DoC, 'DoC_global': DoC_gloal}
 
 
     def step(self, a):  
