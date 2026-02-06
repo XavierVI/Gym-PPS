@@ -1,4 +1,4 @@
-import gym
+import gymnasium as gym
 from .param import *
 import numpy as np
 

@@ -1,4 +1,5 @@
 import gymnasium as gym
+import gym_pps
 from custom_env import NJPEnvironment
 import argparse
 import torch

@@ -5,7 +5,7 @@ setup(
     version='0.1.0',
     description='Predator-Prey Swarm environment compatible with Gymnasium',
     author='',
-    packages=['gym_pps'],
+    packages=find_packages(),
     package_dir={'gym_pps': 'gym_pps'},
     install_requires=[
         'gymnasium>=0.29.0',

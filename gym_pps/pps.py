@@ -1,6 +1,7 @@
 __credits__ = ["lijianan@westlake.edu.cn"]
 
 from gymnasium import spaces
+from gym_pps.putils import seeding
 from .putils import *
 import numpy as np
 
