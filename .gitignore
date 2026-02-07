@@ -39,3 +39,4 @@ tutorial/*.html
 .idea
 vizdoom.ini
 .vscode/
+*.gif

@@ -69,7 +69,8 @@ def run(config):
     h_store = []
     torch_agent_actions=[]
 
-    for ep_i in tqdm(range(0, config.n_episodes, config.n_rollout_threads)):
+    # for ep_i in tqdm(range(0, config.n_episodes, config.n_rollout_threads)):
+    for ep_i in range(0, config.n_episodes, config.n_rollout_threads):
         print("\rEpisodes %i-%i of %i" % (ep_i + 1,
                                         ep_i + 1 + config.n_rollout_threads,
                                         config.n_episodes), end='', flush=True)
@@ -89,7 +90,6 @@ def run(config):
         for et_i in range(config.episode_length):
             if ep_i % 20 == 0:
                 env.render()
-                pass
 
             p_store[:, :, et_i] = env.unwrapped.p
             h_store[:, :, et_i] = env.unwrapped.heading
@@ -98,6 +98,12 @@ def run(config):
             torch_agent_actions = maddpg.step(torch_obs, start_stop_num,  explore=True)
             agent_actions = np.column_stack([ac.data.cpu().numpy() for ac in torch_agent_actions])
             next_obs, rewards, dones, infos = env.step(agent_actions)
+            # print("=" * 50)
+            # print(f"* Episode {ep_i}, Step {et_i}, Observations: {obs}")
+            # print(f"* Episode {ep_i}, Step {et_i}, Actions: {agent_actions}")
+            # print(f"* Episode {ep_i}, Step {et_i}, Rewards: {rewards}")
+            # print(f"* Episode {ep_i}, Step {et_i}, Dones: {dones}")
+            # print("=" * 50)
             agent_buffer.push(obs, agent_actions, rewards, next_obs, dones)
             adversary_buffer.push(obs, agent_actions, rewards, next_obs, dones)
             obs = next_obs  
