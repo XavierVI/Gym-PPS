@@ -51,7 +51,7 @@ def get_focused(Pos, Vel, norm_threshold, width, remove_self):
     target_Vel[:, :until_idx] = Vel[:, :until_idx]
     return target_Pos, target_Vel
 
-# TODO: optimize / fix this because it's AI generated
+# TODO: optimize / fix these functions because it's AI generated
 def get_dist_b2b(p, L, is_periodic, sizes):
     n = p.shape[1]
 

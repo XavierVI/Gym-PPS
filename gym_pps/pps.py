@@ -143,7 +143,6 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
 
 
     def _get_obs(self):
-
         self.obs = np.zeros(self.observation_space.shape)   
 
         for i in range(self._n_p):
@@ -178,7 +177,10 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
             obs_pursuer = np.concatenate((obs_pursuer_pos, obs_pursuer_vel), axis=0)  # (4, n_peo+1) FIXME: only suitable for no obstacles
 
             if self._dynamics_mode == 'Cartesian':
-                self.obs[:self.obs_dim_pursuer-1, i] = obs_pursuer.T.reshape(-1)       
+                self.obs[:self.obs_dim_pursuer-1, i] = obs_pursuer.T.reshape(-1)
+                # TODO: this was `self.obs[self.obs_dim_pursuer-1, i] = 2/self.max_energy_p * self._energy[[0],i] - 1`
+                # before, does that matter?
+                # The [0] returns the scalar as a (1,), so this change is likely correct.
                 self.obs[self.obs_dim_pursuer-1, i] = 2/self.max_energy_p * self._energy[0, i] - 1  
             elif self._dynamics_mode == 'Polar':
                 self.obs[:self.obs_dim_pursuer-3, i] = obs_pursuer.T.reshape(-1)       
