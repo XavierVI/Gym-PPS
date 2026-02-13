@@ -1,11 +1,11 @@
-def check_python_version():
-    import sys
-    if sys.version_info[0] == 3 and sys.version_info[1] in (8, 10, 12):
-        pass
-    else:
-        raise ValueError('Python 3.8 or 3.10 REQUIRED !')
+# def check_python_version():
+#     import sys
+#     if sys.version_info[0] == 3 and sys.version_info[1] in (8, 10, 12):
+#         pass
+#     else:
+#         raise ValueError('Python 3.8 or 3.10 REQUIRED !')
 
-check_python_version()
+# check_python_version()
 
 from .param import *
 from .prop import *
