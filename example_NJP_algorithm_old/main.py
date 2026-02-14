@@ -24,11 +24,50 @@ env = gym.make(scenario_name)
 custom_param = os.path.dirname(os.path.realpath(__file__)) + '/' + custom_param
 env = NJPEnvironment(env, custom_param)
 
-USE_CUDA = False
-# device = "cuda" if torch.cuda.is_available() else "cpu"
-device = "cpu"
+USE_CUDA = torch.cuda.is_available()
+device = "cuda" if torch.cuda.is_available() else "cpu"
 
 start_time = time.time()
+
+
+def move_atts_to_device(maddpg, device):
+    """
+    force move ALL model modules to the same device (fix cpu/cuda mismatch)
+    """
+    def _to_device(obj, dev):
+        if obj is None:
+            return
+        if hasattr(obj, "to"):
+            try:
+                obj.to(dev)
+            except Exception:
+                pass
+
+    for attr in ["policy", "critic", "target_policy", "target_critic",
+                 "actor", "actor_target", "critic_target"]:
+        _to_device(getattr(maddpg, attr, None), device)
+
+    for ag in getattr(maddpg, "agents", []):
+        for attr in ["policy", "critic", "target_policy", "target_critic",
+                     "actor", "actor_target", "critic_target"]:
+            _to_device(getattr(ag, attr, None), device)
+
+    printed = False
+    for ag in getattr(maddpg, "agents", []):
+        for attr in ["policy", "actor", "critic"]:
+            m = getattr(ag, attr, None)
+            if m is not None and hasattr(m, "parameters"):
+                try:
+                    print("First agent", attr, "param device:",
+                          next(m.parameters()).device)
+                    printed = True
+                    break
+                except StopIteration:
+                    pass
+        if printed:
+            break
+
+
 def run(config):
     model_dir = Path('./models') / config.env_id
     if not model_dir.exists():
@@ -43,7 +82,7 @@ def run(config):
             curr_run = 'run%i' % (max(exst_run_nums) + 1)
     run_dir = model_dir / curr_run
     log_dir = run_dir / 'logs'
-    os.makedirs(log_dir)
+    os.makedirs(log_dir, exist_ok=True)
 
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
@@ -56,6 +95,9 @@ def run(config):
                                   lr_actor=config.lr_actor, lr_critic=config.lr_critic, epsilon=config.epsilon, noise=config.noise,
                                   hidden_dim=config.hidden_dim)
     
+    # map model to device (fix cpu/cuda mismatch)
+    move_atts_to_device(maddpg, device)
+
     ## Load the model if it exists
     # maddpg = MADDPG.init_from_save('./models/model_1/run1/incremental/model_ep201.pt')
 
@@ -69,8 +111,7 @@ def run(config):
     h_store = []
     torch_agent_actions=[]
 
-    # for ep_i in tqdm(range(0, config.n_episodes, config.n_rollout_threads)):
-    for ep_i in range(0, config.n_episodes, config.n_rollout_threads):
+    for ep_i in tqdm(range(0, config.n_episodes, config.n_rollout_threads)):
         print("\rEpisodes %i-%i of %i" % (ep_i + 1,
                                         ep_i + 1 + config.n_rollout_threads,
                                         config.n_episodes), end='', flush=True)
@@ -88,13 +129,13 @@ def run(config):
         h_store = np.zeros((M_h, N_h, config.episode_length))
         
         for et_i in range(config.episode_length):
-            if ep_i % 20 == 0:
+            if config.render and (ep_i % config.render_interval == 0):
                 env.render()
 
             p_store[:, :, et_i] = env.unwrapped.p
             h_store[:, :, et_i] = env.unwrapped.heading
 
-            torch_obs = torch.Tensor(obs).to(device).requires_grad_(False)
+            torch_obs = torch.as_tensor(obs, dtype=torch.float32, device=device)
             torch_agent_actions = maddpg.step(torch_obs, start_stop_num,  explore=True)
             agent_actions = np.column_stack([ac.data.cpu().numpy() for ac in torch_agent_actions])
             next_obs, rewards, dones, infos = env.step(agent_actions)
@@ -113,9 +154,10 @@ def run(config):
             maddpg.prep_training(device=device)
             for a_i in range(maddpg.nagents):
                 if len(buffer_total[a_i]) >= config.batch_size:
-                    sample = buffer_total[a_i].sample(config.batch_size, to_gpu=USE_CUDA)
-                    obs_sample, acs_sample, rews_sample, next_obs_sample, dones_sample = sample  
-                    maddpg.update(obs_sample, acs_sample, rews_sample, next_obs_sample, dones_sample, a_i)   
+                    obs_sample, acs_sample, rews_sample, next_obs_sample, dones_sample = buffer_total[a_i].sample(
+                        config.batch_size, to_gpu=USE_CUDA
+                    )
+                    maddpg.update(obs_sample, acs_sample, rews_sample, next_obs_sample, dones_sample, a_i)
             maddpg.update_all_targets()
             maddpg.prep_rollouts(device=device)    
         
@@ -153,6 +195,17 @@ if __name__ == '__main__':
     parser.add_argument("--tau", default=0.01, type=float)
     parser.add_argument("--agent_alg", default="MADDPG", type=str,choices=['MADDPG', 'DDPG'])
     parser.add_argument("--adversary_alg", default="MADDPG", type=str,choices=['MADDPG', 'DDPG'])
+    parser.add_argument(
+        "--render",
+        action="store_true",
+        help="Enable env.render(). On headless servers leave this OFF, or run with xvfb-run.",
+    )
+    parser.add_argument(
+        "--render_interval",
+        default=20,
+        type=int,
+        help="Render every N episodes (only when --render is set). Default: 20",
+    )
 
     config = parser.parse_args()
 

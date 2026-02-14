@@ -85,9 +85,9 @@ class DDPGAgent(object):
         else:  # continuous action
             if explore:
                 if np.random.rand() < self.epsilon:
-                    action = Tensor(np.random.uniform(-1, 1, size=action.shape)).requires_grad_(False)
+                    action = Tensor(np.random.uniform(-1, 1, size=action.shape)).to(action.device).requires_grad_(False)
                 else:
-                    action += Tensor(self.exploration.noise()).requires_grad_(False)
+                    action += Tensor(self.exploration.noise()).to(action.device).requires_grad_(False)
                     action = action.clamp(-1, 1)
         return action.t()
 
