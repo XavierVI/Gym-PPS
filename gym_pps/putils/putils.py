@@ -14,11 +14,12 @@ def normalize_angle(x: np.array) -> np.array:
 
 def get_sizes(size_p, size_e, size_o, n_p, n_e, n_o):
     n_peo = n_p + n_e + n_o
-    size = np.concatenate((
-        np.full(n_p, size_p),
+    size = np.concatenate(( # concatenate sizes for predators, prey, and obstacles
+        np.full(n_p, size_p), # creates an array of size n_p filled with size_p
         np.full(n_e, size_e),
         np.full(n_o, size_o)
     ))
+    # stacks duplicates of 1D arrays on top of each other to make a 2D array
     sizes = np.tile(size.reshape(n_peo, 1), (1, n_peo))
     sizes = sizes + sizes.T
     np.fill_diagonal(sizes, 0)
