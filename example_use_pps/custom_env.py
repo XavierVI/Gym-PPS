@@ -1,8 +1,9 @@
-import gym
-from gym import spaces
+import gymnasium as gym
+
+from gymnasium import spaces
 import numpy as np
-from gym.wrappers import PredatorPreySwarmCustomizer
-from gym.wrappers import CustomObservation, CustomReward, CustomAction
+from gym_pps.wrappers import PredatorPreySwarmCustomizer
+from gym_pps.wrappers.pps_wrapper import CustomObservation, CustomReward, CustomAction
 
 """Define your own Observation and Reward in this script:
 You may use the following properties to define your observation/reward functions:
