@@ -1,10 +1,11 @@
-import gym
+import gymnasium as gym
 from custom_env import NJPEnvironment
 import argparse
 import torch
 import time
 import os
 import numpy as np
+import imageio
 from algorithms.maddpg import MADDPG
 from pathlib import Path
 from utils.buffer import ReplayBuffer
@@ -19,7 +20,8 @@ custom_param = os.path.dirname(os.path.realpath(__file__)) + '/' + custom_param
 env = NJPEnvironment(env, custom_param)
 
 USE_CUDA = False 
-device = "cuda" if torch.cuda.is_available() else "cpu"
+# device = "cuda" if torch.cuda.is_available() else "cpu"
+device = "cpu"
 
 start_time = time.time()
 def run(config):
@@ -34,7 +36,7 @@ def run(config):
                                   hidden_dim=config.hidden_dim)
     
     ## Load the model if it exists
-    maddpg = MADDPG.init_from_save('./models/model_1/run1/incremental/model_ep201.pt')
+    maddpg = MADDPG.init_from_save('./models/model_1/run8/incremental/model_ep201.pt')
 
     adversary_buffer = ReplayBuffer(config.buffer_length, env.num_predator, state_dim=env.observation_space.shape[0], action_dim=env.action_space.shape[0],
                                  start_stop_index=start_stop_num[0])
@@ -51,24 +53,27 @@ def run(config):
                                         ep_i + 1 + config.n_rollout_threads,
                                         config.n_episodes), end='', flush=True)
         episode_reward = 0
-        obs=env.reset()
+        obs, _ = env.reset()
         maddpg.prep_rollouts(device=device) 
         
         maddpg.scale_noise(maddpg.noise, maddpg.epsilon)
         maddpg.reset_noise()
 
-        M_p, N_p = np.shape(env.p)
-        M_h, N_h =np.shape(env.heading)
+        M_p, N_p = np.shape(env.unwrapped.p)
+        M_h, N_h =np.shape(env.unwrapped.heading)
 
         p_store = np.zeros((M_p, N_p, config.episode_length))
         h_store = np.zeros((M_h, N_h, config.episode_length))
         
+        frames = []
         for et_i in range(config.episode_length):
             
-            env.render()
+            frame = env.unwrapped.render(mode='rgb_array')
+            if frame is not None:
+                frames.append(frame)
 
-            p_store[:, :, et_i] = env.p
-            h_store[:, :, et_i] = env.heading
+            p_store[:, :, et_i] = env.unwrapped.p
+            h_store[:, :, et_i] = env.unwrapped.heading
 
             torch_obs = torch.Tensor(obs).requires_grad_(False)
             torch_agent_actions = maddpg.step(torch_obs, start_stop_num,  explore=True)
@@ -80,6 +85,17 @@ def run(config):
             t += config.n_rollout_threads   
             episode_reward += rewards 
         
+        # Save video
+        if len(frames) > 0:
+            video_path = f'evaluation_ep{ep_i}.mp4'
+            try:
+                # imageio.mimsave(video_path, frames, fps=30)
+                # Fallback to gif if mp4 writer not available or issues arise
+                imageio.mimsave(f'evaluation_ep{ep_i}.gif', frames, fps=30)
+                print(f"Video saved to evaluation_ep{ep_i}.gif")
+            except Exception as e:
+                print(f"Failed to save video: {e}")
+
         maddpg.noise = max(0.05, maddpg.noise-5e-5)
         maddpg.epsilon = max(0.05, maddpg.epsilon-5e-5)
         # maddpg.noise = max(0.05, maddpg.noise-5e-5)

@@ -64,9 +64,9 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
 
     def __init__(self, n_p=3, n_e=10):
         
-        self._n_p = n_p
-        self._n_e = n_e
-        self._n_o = 0
+        self._n_p = n_p # number of predators
+        self._n_e = n_e # number of prey
+        self._n_o = 0 # number of obstacles?
         self.viewer = None
         self.seed()
         self.__reinit__()
@@ -77,7 +77,9 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
         self._n_peo = self._n_p + self._n_e + self._n_o
         self.observation_space = self._get_observation_space()  
         self.action_space = self._get_action_space()   
-        self._m = get_mass(self._m_p, self._m_e, self._m_o, self._n_p, self._n_e, self._n_o)  
+        self._m = get_mass(self._m_p, self._m_e, self._m_o, self._n_p, self._n_e, self._n_o)
+        # self._size: array of "sizes" for each agent
+        # self._sizes: matrix of "sizes" for each pair of agents, used for collision detection
         self._size, self._sizes = get_sizes(self._size_p, self._size_e, self._size_o, self._n_p, self._n_e, self._n_o)  
 
         if self._billiards_mode:
@@ -112,19 +114,27 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
         super().reset(seed=seed)
         max_size = np.max(self._size)
         max_respawn_times = 100
+
         for respawn_time in range (max_respawn_times):
             self._p = np.random.uniform(-1+max_size, 1-max_size, (2, self._n_peo))   # Initialize self._p
+        
             if self._obstacles_is_constant:
                 self._p[:, self._n_pe:self._n_peo] = self._p_o
-            self._d_b2b_center, _, _is_collide_b2b = get_dist_b2b(self._p, self._L, self._is_periodic, self._sizes)
+            self._d_b2b_center, _, _is_collide_b2b = get_dist_b2b(
+                self._p, self._L, self._is_periodic, self._sizes)
+        
             if _is_collide_b2b.sum() == 0:
                 break
+        
             if respawn_time == max_respawn_times-1:
                 print('Some particles are overlapped at the initial time !')
+        
         if self._render_traj == True:
             self._p_traj = np.zeros((self._traj_len, 2, self._n_peo))
             self._p_traj[0,:,:] = self._p
+        
         self._dp = np.zeros((2, self._n_peo))  
+        
         if self._billiards_mode:
             self._dp = np.random.uniform(-1,1,(2,self._n_peo))  # ice mode  
             if self._dynamics_mode == 'Polar':

@@ -1,6 +1,6 @@
-import gym
+import gymnasium as gym
+from gym_pps.wrappers import PredatorPreySwarmCustomizer
 import numpy as np
-from gym.wrappers import PredatorPreySwarmCustomizer
 
 class Agent:
     def __init__(self, adversary=False):
@@ -11,6 +11,7 @@ class NJPEnvironment(PredatorPreySwarmCustomizer):
 
     def __init__(self, env, args):
         super(NJPEnvironment, self).__init__(env, args)
+        env = env.unwrapped
         self.num_prey = env.n_e
         self.num_predator = env.n_p
         self.agents = [Agent() for _ in range(self.num_prey)] + [Agent(adversary=True) for _ in range(self.num_predator)]
