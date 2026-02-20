@@ -261,7 +261,7 @@ def run(config):
             flush=True,
         )
 
-        obs = env.reset()
+        obs, _ = env.reset()
         algo.prep_rollouts(device=device)
 
         algo.scale_noise(algo.noise, algo.epsilon)
@@ -304,8 +304,8 @@ def run(config):
                 _algo_update(algo, obs_s, acs_s, rews_s,
                              next_obs_s, dones_s, a_i, start_stop_num)
 
-            algo.update_all_targets()
-            algo.prep_rollouts(device=device)
+        algo.update_all_targets()
+        algo.prep_rollouts(device=device)
 
         # Exploration decay
         algo.noise = max(config.min_noise, algo.noise - config.noise_decay)
@@ -314,19 +314,9 @@ def run(config):
 
         # Save
         if ep_i % config.save_interval < config.n_rollout_threads:
-            os.makedirs(run_dir / 'incremental', s,
-                        next_obs_s, dones_s, a_i, start_stop_num)
+            os.makedirs(run_dir / 'incremental', exist_ok=True)
+            algo.save(run_dir / 'incremental' / ('model_ep%i.pt' % (ep_i + 1)))
 
-            algo.update_all_targets()
-            algo.prep_rollouts(device=device)
-
-        # Exploration decay
-        algo.noise = max(config.min_noise, algo.noise - config.noise_decay)
-        algo.epsilon = max(config.min_epsilon,
-                           algo.epsilon - config.epsilon_decay)
-
-        # Saveexist_ok=True)
-        algo.save(run_dir / 'incremental' / ('model_ep%i.pt' % (ep_i + 1)))
 
     end_time = time.time()
     elapsed_time = end_time - start_time
