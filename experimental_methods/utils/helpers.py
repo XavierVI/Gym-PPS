@@ -32,7 +32,7 @@ def save_dos_and_doa(dos_and_doa_vals, filename):
 
 def create_run_directory(config):
     """Create the run directory and return the path."""
-    model_dir = Path('./models') / config.env_id
+    model_dir = Path('./models') / config.algo
 
     if not model_dir.exists():
         current_run = 'run1'

@@ -7,125 +7,185 @@ import os
 import numpy as np
 import imageio
 from algorithms.maddpg import MADDPG
+from algorithms.mappo import MAPPO
+from algorithms import ddpg as ddpg_mod
 from pathlib import Path
-from utils.buffer import ReplayBuffer
 from tqdm import tqdm
+from utils.helpers import (
+    create_agent_slices, 
+    create_replay_buffers, 
+    create_argument_parser,
+    decay_exploration_noise
+)
+from utils.device_management import move_model_to_device
+
+# ============================================================================
+# GLOBAL CONFIGURATION
+# ============================================================================
+
+USE_CUDA = torch.cuda.is_available()
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+START_TIME = time.time()
 
 
-## Define the Predator-Prey Swarm (PPS) environment
-scenario_name = 'PredatorPreySwarm-v0'  
-custom_param = 'custom_param.json'      
-env = gym.make(scenario_name)
-custom_param = os.path.dirname(os.path.realpath(__file__)) + '/' + custom_param
-env = NJPEnvironment(env, custom_param)
+# ============================================================================
+# ENVIRONMENT SETUP
+# ============================================================================
 
-USE_CUDA = False 
-# device = "cuda" if torch.cuda.is_available() else "cpu"
-device = "cpu"
+def setup_environment():
+    """Initialize and wrap the Predator-Prey Swarm environment."""
+    scenario_name = 'PredatorPreySwarm-v0'
+    custom_param_name = 'custom_param.json'
 
-start_time = time.time()
+    environment = gym.make(scenario_name)
+    custom_param_path = os.path.dirname(
+        os.path.realpath(__file__)) + '/' + custom_param_name
+    environment = NJPEnvironment(environment, custom_param_path)
+
+    return environment
+
+
+# ============================================================================
+# MODEL LOADING
+# ============================================================================
+
+def load_model_checkpoint(model_path, model_type):
+    """Load a trained model from checkpoint."""
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model checkpoint not found at {model_path}")
+    
+    model_type_upper = model_type.upper()
+    
+    if model_type_upper == "MADDPG":
+        model = MADDPG.init_from_save(model_path)
+    elif model_type_upper == "DDPG":
+        # Try IDDPG first, then DDPG
+        DDPGCls = getattr(ddpg_mod, "IDDPG", None) or getattr(ddpg_mod, "DDPG", None)
+        if DDPGCls is None:
+            raise ImportError("Cannot find IDDPG or DDPG class in algorithms/ddpg.py")
+        model = DDPGCls.init_from_save(model_path)
+    elif model_type_upper == "MAPPO":
+        model = MAPPO.init_from_save(model_path)
+    else:
+        raise ValueError(f"Unknown model type: {model_type_upper}")
+    
+    return model
+
+
+# ============================================================================
+# VIDEO SAVING
+# ============================================================================
+
+def save_episode_video(frames, output_path, fps=30):
+    """Save collected frames as a gif or video file."""
+    if len(frames) == 0:
+        print("No frames to save")
+        return False
+    
+    os.makedirs(os.path.dirname(output_path) if os.path.dirname(output_path) else '.', exist_ok=True)
+    
+    try:
+        imageio.mimsave(output_path, frames, fps=fps)
+        print(f"Video saved to {output_path}")
+        return True
+    except Exception as e:
+        print(f"Failed to save video to {output_path}: {e}")
+        return False
+
+
+# ============================================================================
+# EVALUATION
+# ============================================================================
+
 def run(config):
-
+    """Run evaluation of a trained model."""
+    # Setup
+    env = setup_environment()
+    agent_slices = create_agent_slices(env)
+    buffers = create_replay_buffers(env, config, agent_slices)
+    
+    torch.manual_seed(config.seed)
+    np.random.seed(config.seed)
     if not USE_CUDA:
         torch.set_num_threads(config.n_training_threads)
-    start_stop_num=[slice(0,env.num_predator),slice(env.num_predator, env.num_predator+env.num_prey)]
-    maddpg = MADDPG.init_from_env(env, agent_alg=config.agent_alg,
-                                  adversary_alg=config.adversary_alg,
-                                  tau=config.tau,
-                                  lr_actor=config.lr_actor, lr_critic=config.lr_critic, epsilon=config.epsilon, noise=config.noise,
-                                  hidden_dim=config.hidden_dim)
     
-    ## Load the model if it exists
-    maddpg = MADDPG.init_from_save('./models/model_1/run8/incremental/model_ep201.pt')
+    # Load model
+    print(f"Loading {config.model_type} model from: {config.model_path}")
+    model = load_model_checkpoint(config.model_path, config.model_type)
+    move_model_to_device(model, DEVICE)
+    
+    # Create output directory for videos
+    video_dir = Path(config.video_output_dir) if config.video_output_dir else Path('.')
+    video_dir.mkdir(parents=True, exist_ok=True)
 
-    adversary_buffer = ReplayBuffer(config.buffer_length, env.num_predator, state_dim=env.observation_space.shape[0], action_dim=env.action_space.shape[0],
-                                 start_stop_index=start_stop_num[0])
-    agent_buffer = ReplayBuffer(config.buffer_length, env.num_prey,  state_dim=env.observation_space.shape[0], action_dim=env.action_space.shape[0],
-                                 start_stop_index=start_stop_num[1])
-    buffer_total=[adversary_buffer, agent_buffer]
-    t = 0
-    p_store = []
-    h_store = []
-    torch_agent_actions=[]
-
+    
+    # Evaluation loop
     for ep_i in tqdm(range(0, config.n_episodes, config.n_rollout_threads)):
-        print("\rEpisodes %i-%i of %i" % (ep_i + 1,
-                                        ep_i + 1 + config.n_rollout_threads,
-                                        config.n_episodes), end='', flush=True)
-        episode_reward = 0
+        print(f"\rEpisodes {ep_i + 1}-{ep_i + 1 + config.n_rollout_threads} of {config.n_episodes}", 
+              end='', flush=True)
+        
         obs, _ = env.reset()
-        maddpg.prep_rollouts(device=device) 
+        model.prep_rollouts(device=DEVICE)
+        model.scale_noise(model.noise, model.epsilon)
+        model.reset_noise()
         
-        maddpg.scale_noise(maddpg.noise, maddpg.epsilon)
-        maddpg.reset_noise()
-
-        M_p, N_p = np.shape(env.unwrapped.p)
-        M_h, N_h =np.shape(env.unwrapped.heading)
-
-        p_store = np.zeros((M_p, N_p, config.episode_length))
-        h_store = np.zeros((M_h, N_h, config.episode_length))
+        # Initialize storage
+        pos_dim, num_agents = np.shape(env.unwrapped.p)
+        heading_dim, _ = np.shape(env.unwrapped.heading)
         
+        positions = np.zeros((pos_dim, num_agents, config.episode_length))
+        headings = np.zeros((heading_dim, num_agents, config.episode_length))
         frames = []
-        for et_i in range(config.episode_length):
-            
+        
+        # Run episode
+        for step_idx in range(config.episode_length):
+            # Capture frame for video
             frame = env.unwrapped.render(mode='rgb_array')
             if frame is not None:
                 frames.append(frame)
-
-            p_store[:, :, et_i] = env.unwrapped.p
-            h_store[:, :, et_i] = env.unwrapped.heading
-
-            torch_obs = torch.Tensor(obs).requires_grad_(False)
-            torch_agent_actions = maddpg.step(torch_obs, start_stop_num,  explore=True)
-            agent_actions = np.column_stack([ac.data.numpy() for ac in torch_agent_actions])
-            next_obs, rewards, dones, infos = env.step(agent_actions)
-            agent_buffer.push(obs, agent_actions, rewards, next_obs, dones)
-            adversary_buffer.push(obs, agent_actions, rewards, next_obs, dones)
-            obs = next_obs  
-            t += config.n_rollout_threads   
-            episode_reward += rewards 
+            
+            # Store positions and headings
+            positions[:, :, step_idx] = env.unwrapped.p
+            headings[:, :, step_idx] = env.unwrapped.heading
+            
+            # Get action from model
+            torch_obs = torch.as_tensor(obs, dtype=torch.float32, device=DEVICE)
+            torch_actions = model.step(torch_obs, agent_slices, explore=True)
+            actions = np.column_stack([ac.data.cpu().numpy() for ac in torch_actions])
+            
+            # Step environment
+            next_obs, rewards, dones, infos = env.step(actions)
+            
+            # Store in buffers
+            buffers[0].push(obs, actions, rewards, next_obs, dones)  # predators
+            buffers[1].push(obs, actions, rewards, next_obs, dones)  # prey
+            
+            obs = next_obs
         
         # Save video
-        if len(frames) > 0:
-            video_path = f'evaluation_ep{ep_i}.mp4'
-            try:
-                # imageio.mimsave(video_path, frames, fps=30)
-                # Fallback to gif if mp4 writer not available or issues arise
-                imageio.mimsave(f'evaluation_ep{ep_i}.gif', frames, fps=30)
-                print(f"Video saved to evaluation_ep{ep_i}.gif")
-            except Exception as e:
-                print(f"Failed to save video: {e}")
-
-        maddpg.noise = max(0.05, maddpg.noise-5e-5)
-        maddpg.epsilon = max(0.05, maddpg.epsilon-5e-5)
-        # maddpg.noise = max(0.05, maddpg.noise-5e-5)
-
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print(f"Elapsed time: {elapsed_time/60} min")
+        video_filename = video_dir / f'evaluation_ep{ep_i}.gif'
+        save_episode_video(frames, str(video_filename), fps=config.video_fps)
+        
+        # Decay exploration noise
+        decay_exploration_noise(model)
+    
+    # Print summary
+    elapsed_time = time.time() - START_TIME
+    print(f"\nEvaluation completed in {elapsed_time / 60:.2f} minutes")
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--env_id", default="model_1", type=str)
-    parser.add_argument("--seed", default=0, type=int)
-    parser.add_argument("--n_rollout_threads", default=1, type=int)
-    parser.add_argument("--n_training_threads", default=10, type=int)
-    parser.add_argument("--buffer_length", default=int(5e5), type=int)
-    parser.add_argument("--n_episodes", default=1, type=int)
-    parser.add_argument("--episode_length", default=500, type=int)
-    parser.add_argument("--batch_size", default=256, type=int)
-    parser.add_argument("--n_exploration_eps", default=25000, type=int)
-    parser.add_argument("--init_noise_scale", default=0.3, type=float)
-    parser.add_argument("--final_noise_scale", default=0.0, type=float)
-    parser.add_argument("--save_interval", default=50, type=int)
-    parser.add_argument("--hidden_dim", default=128, type=int) 
-    parser.add_argument("--lr_actor", default=1e-4, type=float)
-    parser.add_argument("--lr_critic", default=1e-3, type=float)
-    parser.add_argument("--epsilon", default=0.1, type=float)
-    parser.add_argument("--noise", default=0.1, type=float)
-    parser.add_argument("--tau", default=0.01, type=float)
-    parser.add_argument("--agent_alg", default="MADDPG", type=str,choices=['MADDPG', 'DDPG'])
-    parser.add_argument("--adversary_alg", default="MADDPG", type=str,choices=['MADDPG', 'DDPG'])
+    parser = create_argument_parser()
+    
+    # Evaluation-specific arguments
+    parser.add_argument("--model_type", default="maddpg", type=str, 
+                        choices=['maddpg', 'mappo', 'ddpg'],
+                        help="Type of model to load")
+    parser.add_argument("--model_path", type=str, required=True,
+                        help="Path to trained model checkpoint (e.g., ./models/model_1/run1/incremental/maddpg_model_ep201.pt)")
+    parser.add_argument("--video_output_dir", default="./evaluation_videos", type=str,
+                        help="Directory to save evaluation videos")
+    parser.add_argument("--video_fps", default=30, type=int,
+                        help="Frames per second for saved video")
 
     config = parser.parse_args()
 

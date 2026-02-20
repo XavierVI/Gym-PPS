@@ -210,7 +210,6 @@ def run_episode_maddpg(env, maddpg, config, agent_slices, buffers):
         actions = np.column_stack([action.data.cpu().numpy() for action in torch_actions])
         
         # Step environment
-        print(actions.shape)
         next_observation, rewards, dones, infos = env.step(actions)
         
         # Store transitions in replay buffers

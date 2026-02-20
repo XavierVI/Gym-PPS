@@ -1,9 +1,15 @@
 {
     "dynamics_mode": "Polar",
-    "n_p": 3,
-    "n_e": 25,
+    "n_p": 1,
+    "n_e": 5,
     "pursuer_strategy": "input",
     "escaper_strategy": "input",
     "is_periodic": true,
-    "render_traj": true
+    "render_traj": true,
+    "save_frame": true,
+
+    "m_p": 3.0,
+    "m_e": 1.0,
+    "size_p": 0.06,
+    "size_e": 0.035
 }

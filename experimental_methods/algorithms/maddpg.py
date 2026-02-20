@@ -283,10 +283,6 @@ class MADDPG(object):
         # Adversaries use adversary_alg, others use agent_alg
         alg_types = [adversary_alg if atype == 'adversary' else agent_alg
                      for atype in env.agent_types]
-        print("=" * 50)
-        print(alg_types)
-        print("=" * 50)
-    
         
         # Create initialization parameters for each agent in the environment
         # All agents share the same network dimensions but may use different algorithms
