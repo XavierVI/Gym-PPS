@@ -40,18 +40,18 @@ class PPOAgent:
         
         # Policy network: outputs mean and log_std for continuous actions
         self.policy = MLPNetwork(
-            input_size=num_in_pol,
-            output_size=num_out_pol * 2,  # mean and log_std for each action
-            hidden_sizes=[hidden_dim, hidden_dim],
-            output_activation=None
+            input_dim=num_in_pol,
+            out_dim=num_out_pol,  # mean and log_std for each action
+            hidden_dim=hidden_dim,
+            constrain_out=True, discrete_action=False
         ).to(device)
         
         # Value network: estimates state value for advantage computation
         self.value_net = MLPNetwork(
-            input_size=num_in_critic,
-            output_size=1,
-            hidden_sizes=[hidden_dim, hidden_dim],
-            output_activation=None
+            input_dim=num_in_critic,
+            out_dim=1,
+            hidden_dim=hidden_dim,
+            constrain_out=False
         ).to(device)
         
         # Optimizers
@@ -78,8 +78,8 @@ class PPOAgent:
             mean = policy_output[:, :self.num_out_pol]
             
             if exploration:
-                # Sample from Gaussian policy
-                std = torch.exp(self.log_std.expand_as(mean))
+                # Sample from Gaussian policy (keep std on same device as mean)
+                std = torch.exp(self.log_std).to(mean.device).expand_as(mean)
                 dist = torch.distributions.Normal(mean, std)
                 action = dist.sample()
                 log_prob = dist.log_prob(action).sum(dim=-1, keepdim=True)
@@ -89,7 +89,8 @@ class PPOAgent:
                 log_prob = torch.zeros(action.shape[0], 1).to(self.device)
             
             # Get value estimate
-            value = self.value_net(observation)
+            critic_in = torch.cat((observation, action), dim=1)
+            value = self.value_net(critic_in)
         
         return action, log_prob, value
     
@@ -107,7 +108,7 @@ class PPOAgent:
         """
         policy_output = self.policy(observation)
         mean = policy_output[:, :self.num_out_pol]
-        std = torch.exp(self.log_std.expand_as(mean))
+        std = torch.exp(self.log_std).to(mean.device).expand_as(mean)
         
         dist = torch.distributions.Normal(mean, std)
         log_prob = dist.log_prob(action).sum(dim=-1, keepdim=True)
@@ -211,10 +212,10 @@ class MAPPO:
         
         # Compute distances to all other agents
         all_positions = positions  # [batch, num_agents, 2]
-        distances = torch.norm(agent_pos - all_positions, dim=2)  # [batch, num_agents]
+        distances = torch.norm(agent_pos - all_positions, dim=2).to(self.device)  # [batch, num_agents]
         
         # Create mask for agents within radius (always include self)
-        mask = (distances <= self.observation_radius) | (torch.arange(self.num_agents).unsqueeze(0) == agent_idx)
+        mask = (distances <= self.observation_radius) | (torch.arange(self.num_agents, device=self.device).unsqueeze(0) == agent_idx)
         
         # Filter observations based on mask
         # For agents outside radius, zero out their observation contribution
@@ -238,24 +239,27 @@ class MAPPO:
             List of actions for each agent type
         """
         actions = []
+        values = []
         
         for agent_idx, agent in enumerate(self.agents):
             is_adversary = agent_idx < agent_slices[0].stop
-            
+            print(observations.shape)
             # Filter observations by radius
             filtered_obs = self.filter_observations_by_radius(
                 observations, positions, agent_idx, is_adversary
             )
+            print(filtered_obs.shape)
             
             # Handle batching if needed
             if filtered_obs.dim() == 1:
                 filtered_obs = filtered_obs.unsqueeze(0)
             
             # Get action from policy
-            action, _, _ = agent.get_action(filtered_obs, exploration=explore)
+            action, _, value = agent.get_action(filtered_obs, exploration=explore)
             actions.append(action)
+            values.append(value)
         
-        return actions
+        return actions, values
     
     def compute_gae(self, rewards, values, dones, next_values, gamma, gae_lambda):
         """
@@ -445,7 +449,8 @@ class MAPPO:
         num_in_pol = env.observation_space.shape[0]
         num_out_pol = env.action_space.shape[0]
         # Critic sees all agents' observations
-        num_in_critic = num_in_pol
+        num_in_critic = env.observation_space.shape[0] + \
+            env.action_space.shape[0]
         
         # Get number of agents
         num_agents = env.num_predator + env.num_prey

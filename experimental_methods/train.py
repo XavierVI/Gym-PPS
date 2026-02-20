@@ -7,6 +7,7 @@ import time
 import os
 import numpy as np
 from algorithms.maddpg import MADDPG
+from algorithms.mappo import MAPPO
 from pathlib import Path
 from utils.buffer import ReplayBuffer
 from tqdm import tqdm
@@ -48,8 +49,17 @@ def setup_environment():
 
 def move_model_to_device(maddpg, device):
     """Move all model modules to the same device (fix cpu/cuda mismatch)."""
-    model_attributes = ["policy", "critic", "target_policy", "target_critic",
-                        "actor", "actor_target", "critic_target"]
+    model_attributes = [
+        "policy",
+        "critic",
+        "target_policy",
+        "target_critic",
+        "actor",
+        "actor_target",
+        "critic_target",
+        "value_net",
+        "log_std",
+    ]
     
     def _move_attribute(obj, dev):
         """Move an object to a device if it has the 'to' method."""
@@ -208,6 +218,7 @@ def run_episode_maddpg(env, maddpg, config, agent_slices, buffers):
         actions = np.column_stack([action.data.cpu().numpy() for action in torch_actions])
         
         # Step environment
+        print(actions.shape)
         next_observation, rewards, dones, infos = env.step(actions)
         
         # Store transitions in replay buffers
@@ -245,26 +256,97 @@ def decay_exploration_noise(maddpg):
 
 
 
-def run_episode_mappo():
-    # actions = mappo.step(observations, positions, agent_slices, explore=True)
-    pass
+def run_episode_mappo(env, mappo, config, agent_slices):
+    """Run a single MAPPO episode and collect trajectories for all agents."""
+    observation, _ = env.reset()
+    mappo.prep_rollouts()
+
+    position_dims, num_agents = np.shape(env.unwrapped.p)
+    heading_dims, _ = np.shape(env.unwrapped.heading)
+
+    positions = np.zeros((position_dims, num_agents, config.episode_length))
+    headings = np.zeros((heading_dims, num_agents, config.episode_length))
+
+    trajectories = {agent_idx: [] for agent_idx in range(num_agents)}
+
+    for step_idx in range(config.episode_length):
+        if config.render and (step_idx % config.render_interval == 0):
+            env.render()
+
+        positions[:, :, step_idx] = env.unwrapped.p
+        headings[:, :, step_idx] = env.unwrapped.heading
+
+        # Build batch observations and positions
+        obs_agents = torch.as_tensor(observation.T, dtype=torch.float32, device=DEVICE)
+        obs_batch = obs_agents.unsqueeze(0)
+        pos_batch = torch.as_tensor(env.unwrapped.p.T, dtype=torch.float32, device=DEVICE).unsqueeze(0)
+        print("OBS batch: ", obs_batch.shape)
+        print("POS batch: ", pos_batch.shape)
+        actions, values = mappo.step(obs_batch, pos_batch, agent_slices, explore=True)
+
+        # for agent_idx, agent in enumerate(mappo.agents):
+        #     is_adversary = agent_idx < agent_slices[0].stop
+        #     filtered_obs = mappo.filter_observations_by_radius(
+        #         obs_batch, pos_batch, agent_idx, is_adversary
+        #     )
+        #     agent_obs = filtered_obs[0, agent_idx].unsqueeze(0)
+        #     action, _, value = agent.get_action(agent_obs, exploration=True)
+        #     actions.append(action)
+        #     values.append(value)
 
 
-def train_mappo_model():
-    # After episode, update with trajectory data
-    # mappo.update(trajectories, num_epochs=5, batch_size=64)
-    pass
+        # Actions need to be (action_dim, num_agents) for env.step
+        actions_array = torch.cat(actions, dim=0).detach().cpu().numpy().T
+        print("Actions: ", actions_array.shape)
+        print("OBS batch: ", obs_batch.shape)
+        print("POS batch: ", pos_batch.shape)
+        next_observation, rewards, dones, infos = env.step(actions_array)
+
+        # Record per-agent transition
+        next_obs_agents = torch.as_tensor(next_observation.T, dtype=torch.float32, device=DEVICE)
+        next_obs_batch = next_obs_agents.unsqueeze(0)
+        next_pos_batch = torch.as_tensor(env.unwrapped.p.T, dtype=torch.float32, device=DEVICE).unsqueeze(0)
+
+        for agent_idx, agent in enumerate(mappo.agents):
+            is_adversary = agent_idx < agent_slices[0].stop
+            filtered_next_obs = mappo.filter_observations_by_radius(
+                next_obs_batch, next_pos_batch, agent_idx, is_adversary
+            )
+            agent_obs = obs_batch[0, agent_idx].cpu().numpy()
+            agent_next_obs = filtered_next_obs[0, agent_idx].cpu().numpy()
+            agent_action = actions[agent_idx].squeeze(0).cpu().numpy()
+            agent_reward = rewards[agent_idx] if hasattr(rewards, '__len__') else rewards
+            agent_done = dones[agent_idx] if hasattr(dones, '__len__') else dones
+            agent_value = values[agent_idx].item()
+
+            trajectories[agent_idx].append(
+                (agent_obs, agent_action, agent_reward, agent_next_obs, agent_done, agent_value)
+            )
+
+        observation = next_observation
+
+    return positions, headings, num_agents, position_dims, trajectories
 
 
-def decay_entropy():
-    pass
+def train_mappo_model(mappo, config, trajectories):
+    """Train MAPPO using collected trajectories."""
+    mappo.prep_training()
+    mappo.update(trajectories, num_epochs=5, batch_size=config.batch_size)
+
+
+def save_mappo_checkpoint(mappo, run_dir, episode_idx, config):
+    """Save MAPPO checkpoint if save interval reached."""
+    if episode_idx % config.save_interval < config.n_rollout_threads:
+        checkpoint_dir = run_dir / 'incremental'
+        os.makedirs(checkpoint_dir, exist_ok=True)
+        mappo.save(checkpoint_dir / f'mappo_model_ep{episode_idx + 1}.pt')
 
 def save_model_checkpoint(maddpg, run_dir, episode_idx, config):
     """Save model checkpoint if save interval reached."""
     if episode_idx % config.save_interval < config.n_rollout_threads:
         checkpoint_dir = run_dir / 'incremental'
         os.makedirs(checkpoint_dir, exist_ok=True)
-        maddpg.save(checkpoint_dir / f'model_ep{episode_idx + 1}.pt')
+        maddpg.save(checkpoint_dir / f'maddpg_model_ep{episode_idx + 1}.pt')
 
 def save_dos_and_doa(dos_and_doa_vals, filename):
     """
@@ -283,7 +365,7 @@ def save_dos_and_doa(dos_and_doa_vals, filename):
 # MAIN TRAINING LOOP
 # ============================================================================
 
-def run(config):
+def run_maddpg(config):
     """Run the complete training pipeline."""
     # Setup
     run_dir, log_dir = create_run_directory(config)
@@ -302,7 +384,7 @@ def run(config):
               end='', flush=True)
         
         # Run episode and collect data
-        positions, headings, num_agents, position_dims = run_episode(
+        positions, headings, num_agents, position_dims = run_episode_maddpg(
             env, maddpg, config, agent_slices, buffers
         )
         
@@ -329,6 +411,41 @@ def run(config):
         dos_and_doa_vals,
         filename=run_dir / 'metrics.csv'
     )
+
+
+def run_mappo(config):
+    """Run the complete MAPPO training pipeline."""
+    run_dir, log_dir = create_run_directory(config)
+    initialize_seeds_and_threads(config)
+    env = setup_environment()
+    agent_slices = create_agent_slices(env)
+
+    mappo = initialize_mappo_model(env, config, agent_slices)
+    dos_and_doa_vals = []
+
+    for episode_idx in tqdm(range(0, config.n_episodes, config.n_rollout_threads)):
+        print(f"\rEpisodes {episode_idx + 1}-{episode_idx + 1 + config.n_rollout_threads} of {config.n_episodes}",
+              end='', flush=True)
+
+        positions, headings, num_agents, position_dims, trajectories = run_episode_mappo(
+            env, mappo, config, agent_slices
+        )
+
+        train_mappo_model(mappo, config, trajectories)
+        save_mappo_checkpoint(mappo, run_dir, episode_idx, config)
+
+        dos, doa = env.dos_and_doa_one_episode(positions, headings, num_agents, position_dims)
+        dos_and_doa_vals.append([episode_idx, dos, doa])
+
+    elapsed_time = time.time() - START_TIME
+    print(f"\nTraining completed in {elapsed_time / 60:.2f} minutes")
+
+    save_dos_and_doa(
+        dos_and_doa_vals,
+        filename=run_dir / 'metrics.csv'
+    )
+
+
 
 
 # ============================================================================
@@ -382,13 +499,16 @@ def create_argument_parser():
                         help="Target network update rate")
     
     # Algorithm config
+    parser.add_argument("--algo", default="maddpg", type=str,
+                        choices=['maddpg', 'mappo'],
+                        help="Algorithm to train")
+    # NOTE: only have to keep these so MADDPG code doesn't break
     parser.add_argument("--agent_alg", default="MADDPG", type=str,
                         choices=['MADDPG', 'DDPG'],
                         help="Algorithm for prey agents")
     parser.add_argument("--adversary_alg", default="MADDPG", type=str,
                         choices=['MADDPG', 'DDPG'],
                         help="Algorithm for predator agents")
-    
     # Checkpoint saving
     parser.add_argument("--save_interval", default=50, type=int,
                         help="Save model every N episodes")
@@ -410,4 +530,7 @@ def create_argument_parser():
 if __name__ == '__main__':
     parser = create_argument_parser()
     config = parser.parse_args()
-    run(config)
+    if config.algo == 'mappo':
+        run_mappo(config)
+    else:
+        run_maddpg(config)
