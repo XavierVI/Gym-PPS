@@ -56,6 +56,19 @@ class DDPGAgent(object):
             self.exploration = 0.3  # epsilon for eps-greedy
         self.discrete_action = discrete_action
 
+    # ---------------- NEW: move all networks to the same device ----------------
+    def to(self, device):
+        """
+        Move all networks (policy/critic/targets) to device.
+        This is CRITICAL to avoid cpu/cuda mismatch in rollout & update.
+        """
+        self.policy.to(device)
+        self.truncated_policy.to(device)
+        self.critic.to(device)
+        self.target_policy.to(device)
+        self.target_critic.to(device)
+        return self
+    # --------------------------------------------------------------------------
 
     def reset_noise(self):
         if not self.discrete_action:
