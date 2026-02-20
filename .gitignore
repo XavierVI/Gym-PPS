@@ -40,3 +40,5 @@ tutorial/*.html
 vizdoom.ini
 .vscode/
 *.gif
+*.csv
+*.txt
