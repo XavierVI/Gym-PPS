@@ -37,6 +37,7 @@ class IDDPG(object):
         self.epsilon = epsilon
         self.noise = noise
 
+        # NOTE: this is creating two agents as well
         self.agents = [
             DDPGAgent(
                 lr_actor=lr_actor,
@@ -49,7 +50,7 @@ class IDDPG(object):
             )
             for params in agent_init_params
         ]
-
+        print(len(self.agents))
         self.agent_init_params = agent_init_params
         self.gamma = gamma
         self.tau = tau
@@ -189,6 +190,8 @@ class IDDPG(object):
         curr_agent.critic_optimizer.zero_grad()
 
         # target action from target policy (on same device)
+        # NOTE: here we only fetch information for agent(i)
+        # so it is more decentralized?
         trgt_act_i = curr_agent.target_policy(next_obs)
         trgt_vf_in = torch.cat((next_obs, trgt_act_i), dim=1)
 

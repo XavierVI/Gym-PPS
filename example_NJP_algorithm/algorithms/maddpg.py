@@ -33,10 +33,12 @@ class MADDPG(object):
         self.alg_types = alg_types
         self.epsilon = epsilon
         self.noise = noise
+        # NOTE: this is creating an agent for each conspecific
         self.agents = [DDPGAgent(lr_actor=lr_actor, lr_critic=lr_critic, discrete_action=discrete_action,
                                  hidden_dim=hidden_dim, epsilon=self.epsilon, noise=self.noise,
                                  **params)
                        for params in agent_init_params]
+        print("Agent length: ", len(self.agents))
         self.agent_init_params = agent_init_params
         self.gamma = gamma
         self.tau = tau
@@ -122,6 +124,7 @@ class MADDPG(object):
         curr_agent = self.agents[agent_i]
 
         curr_agent.critic_optimizer.zero_grad()
+        # NOTE: this is the primary difference between this and IDDPG
         all_trgt_acs = self.target_policies(agent_i, next_obs)
         trgt_vf_in = torch.cat((next_obs, all_trgt_acs), dim=1)
         target_value = (rews + self.gamma *
