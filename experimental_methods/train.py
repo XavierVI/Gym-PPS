@@ -139,6 +139,18 @@ def initialize_maddpg_model(env, config, agent_slices):
     return maddpg
 
 
+def initialize_mappo_model(env, config, agent_slices):
+    mappo = MAPPO.init_from_env(
+        env,
+        observation_radius=5.0,  # Agents see others within 5 units
+        gamma=0.995,
+        lr_actor=1e-4,
+        lr_critic=1e-3
+    )
+    move_model_to_device(mappo, DEVICE)
+    return mappo
+
+
 def create_replay_buffers(env, config, agent_slices):
     """Create replay buffers for predators and prey."""
     state_dim = env.observation_space.shape[0]
@@ -167,7 +179,7 @@ def create_replay_buffers(env, config, agent_slices):
 # EPISODE EXECUTION
 # ============================================================================
 
-def run_episode(env, maddpg, config, agent_slices, buffers):
+def run_episode_maddpg(env, maddpg, config, agent_slices, buffers):
     """Run a single training episode and collect trajectory data."""
     observation, _ = env.reset()
     maddpg.prep_rollouts(device=DEVICE)
@@ -232,6 +244,21 @@ def decay_exploration_noise(maddpg):
     maddpg.epsilon = max(0.05, maddpg.epsilon - 5e-5)
 
 
+
+def run_episode_mappo():
+    # actions = mappo.step(observations, positions, agent_slices, explore=True)
+    pass
+
+
+def train_mappo_model():
+    # After episode, update with trajectory data
+    # mappo.update(trajectories, num_epochs=5, batch_size=64)
+    pass
+
+
+def decay_entropy():
+    pass
+
 def save_model_checkpoint(maddpg, run_dir, episode_idx, config):
     """Save model checkpoint if save interval reached."""
     if episode_idx % config.save_interval < config.n_rollout_threads:
@@ -240,6 +267,11 @@ def save_model_checkpoint(maddpg, run_dir, episode_idx, config):
         maddpg.save(checkpoint_dir / f'model_ep{episode_idx + 1}.pt')
 
 def save_dos_and_doa(dos_and_doa_vals, filename):
+    """
+    Saves the DoS and DoA to a simple CSV file.
+
+    NOTE: the file is saved in models/model_i/runi
+    """
     # convert to a numpy array
     dos_and_doa_vals = np.array(dos_and_doa_vals)
     # save to CSV

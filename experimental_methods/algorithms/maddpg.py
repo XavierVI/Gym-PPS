@@ -15,38 +15,59 @@ class MADDPG(object):
                  gamma=0.95, tau=0.01, lr_actor=1e-4, lr_critic=1e-3,  hidden_dim=64, 
                  discrete_action=False):
         """
-        Inputs:
-            agent_init_params (list of dict): List of dicts with parameters to
-                                              initialize each agent
-                num_in_pol (int): Input dimensions to policy
-                num_out_pol (int): Output dimensions to policy
-                num_in_critic (int): Input dimensions to critic
-            alg_types (list of str): Learning algorithm for each agent (DDPG
-                                       or MADDPG)
-            gamma (float): Discount factor
-            tau (float): Target update rate
-            lr (float): Learning rate for policy and critic
-            hidden_dim (int): Number of hidden dimensions for networks
-            discrete_action (bool): Whether or not to use discrete action space
+        Initialize the MADDPG multi-agent training wrapper.
+        
+        This constructor sets up all agents with their respective policies and critics,
+        initializes hyperparameters for training, and prepares device tracking for GPU/CPU.
+
+        Args:
+            agent_init_params (list of dict): List of parameter dictionaries for each agent, containing:
+                num_in_pol (int): Input dimensions to policy (observation space size)
+                num_out_pol (int): Output dimensions to policy (action space size)
+                num_in_critic (int): Input dimensions to critic (observation + action space size)
+            alg_types (list of str): Learning algorithm for each agent ('DDPG' or 'MADDPG')
+            epsilon (float): Initial exploration epsilon for action noise
+            noise (float): Initial action noise scale
+            gamma (float): Discount factor for future rewards (default: 0.95)
+            tau (float): Soft update rate for target networks (default: 0.01)
+            lr_actor (float): Learning rate for actor/policy networks (default: 1e-4)
+            lr_critic (float): Learning rate for critic networks (default: 1e-3)
+            hidden_dim (int): Number of hidden dimensions for neural networks (default: 64)
+            discrete_action (bool): Whether the action space is discrete (default: False)
         """
+        # Store number of agents and algorithm types
         self.nagents = len(alg_types)
         self.alg_types = alg_types
+        
+        # Store exploration and noise parameters
         self.epsilon = epsilon
         self.noise = noise
+        
+        # Initialize individual DDPG agents for each actor in the multi-agent system
+        # Each agent has its own policy and critic networks
         self.agents = [DDPGAgent(lr_actor=lr_actor, lr_critic=lr_critic, discrete_action=discrete_action,
                                  hidden_dim=hidden_dim, epsilon=self.epsilon, noise=self.noise,
                                  **params)
                        for params in agent_init_params]
+        
+        # Store initialization parameters for later reconstruction (e.g., loading from checkpoint)
         self.agent_init_params = agent_init_params
+        
+        # Store training hyperparameters
         self.gamma = gamma
         self.tau = tau
         self.lr_actor = lr_actor
         self.lr_critic = lr_critic
         self.discrete_action = discrete_action
-        self.pol_dev = 'cpu'  # device for policies
-        self.critic_dev = 'cpu'  # device for critics
-        self.trgt_pol_dev = 'cpu'  # device for target policies
-        self.trgt_critic_dev = 'cpu'  # device for taarget critics
+        
+        # Track device placement for different network components to avoid device mismatch errors
+        # PyTorch requires all tensor operations to be on the same device
+        self.pol_dev = 'cpu'          # device for active policy networks
+        self.critic_dev = 'cpu'       # device for active critic networks
+        self.trgt_pol_dev = 'cpu'     # device for target policy networks
+        self.trgt_critic_dev = 'cpu'  # device for target critic networks
+        
+        # Counter for total training iterations (used for logging)
         self.niter = 0
 
     @property
@@ -226,38 +247,97 @@ class MADDPG(object):
     def init_from_env(cls, env, agent_alg="MADDPG", adversary_alg="MADDPG",
                       gamma=0.95, tau=0.01, lr_actor=1e-4, lr_critic=1e-3, hidden_dim=64, epsilon=0.1, noise=0.1):
         """
-        Instantiate instance of this class from multi-agent environment
+        Factory method to instantiate MADDPG from a multi-agent environment.
+        
+        This class method simplifies initialization by automatically extracting environment
+        specifications (observation and action space dimensions) and creating the necessary
+        agent initialization parameters. This is the recommended way to initialize MADDPG
+        for a new training run.
+        
+        The method distinguishes between two types of agents:
+        - Adversarial agents (predators): Use the specified adversary_alg
+        - Regular agents (prey): Use the specified agent_alg
+        
+        Args:
+            env: The multi-agent gymnasium environment with 'agent_types' attribute
+            agent_alg (str): Algorithm for prey/regular agents ('MADDPG' or 'DDPG')
+            adversary_alg (str): Algorithm for predator/adversary agents ('MADDPG' or 'DDPG')
+            gamma (float): Discount factor for future rewards
+            tau (float): Soft update rate for target networks
+            lr_actor (float): Actor/policy learning rate
+            lr_critic (float): Critic learning rate
+            hidden_dim (int): Hidden dimension size for neural networks
+            epsilon (float): Initial exploration epsilon
+            noise (float): Initial action noise scale
+            
+        Returns:
+            MADDPG: Initialized MADDPG instance ready for training
         """
+        # Extract environment specifications (dimensions of observation and action spaces)
         agent_init_params = []
-        num_in_pol=env.observation_space.shape[0]
-        num_out_pol=env.action_space.shape[0]
-        num_in_critic=env.observation_space.shape[0] + env.action_space.shape[0]
+        num_in_pol = env.observation_space.shape[0]          # Policy input = observation space
+        num_out_pol = env.action_space.shape[0]              # Policy output = action space
+        num_in_critic = env.observation_space.shape[0] + env.action_space.shape[0]  # Critic input = obs + actions
 
-        # print("num in pol", num_in_pol, "num out pol", num_out_pol, "num in critic", num_in_critic)
-
-        alg_types = [adversary_alg if atype == 'adversary' else agent_alg for
-                     atype in env.agent_types]
-                     
+        # Assign algorithm type to each agent based on agent_type
+        # Adversaries use adversary_alg, others use agent_alg
+        alg_types = [adversary_alg if atype == 'adversary' else agent_alg
+                     for atype in env.agent_types]
+        print("=" * 50)
+        print(alg_types)
+        print("=" * 50)
+    
+        
+        # Create initialization parameters for each agent in the environment
+        # All agents share the same network dimensions but may use different algorithms
         for algtype in alg_types:
             agent_init_params.append({'num_in_pol': num_in_pol,
                                       'num_out_pol': num_out_pol,
                                       'num_in_critic': num_in_critic})
-        init_dict = {'gamma': gamma, 'tau': tau, 'lr_actor': lr_actor, 'lr_critic': lr_critic, 'epsilon': epsilon, 'noise': noise,
+        
+        # Prepare the initialization dictionary with all hyperparameters
+        init_dict = {'gamma': gamma,
+                     'tau': tau,
+                     'lr_actor': lr_actor,
+                     'lr_critic': lr_critic,
+                     'epsilon': epsilon,
+                     'noise': noise,
                      'hidden_dim': hidden_dim,
                      'alg_types': alg_types,
                      'agent_init_params': agent_init_params}
+        
+        # Create the MADDPG instance with the prepared parameters
         instance = cls(**init_dict)
+        # Store init_dict for later saving/loading
         instance.init_dict = init_dict
         return instance
 
     @classmethod
     def init_from_save(cls, filename):
         """
-        Instantiate instance of this class from file created by 'save' method
+        Factory method to instantiate MADDPG from a previously saved checkpoint.
+        
+        This class method loads a model that was previously saved using the save() method.
+        It reconstructs the MADDPG instance with the same architecture and loads all
+        trained weights into the networks. This is used for resuming training or
+        performing inference with trained models.
+        
+        Args:
+            filename (str): Path to the saved checkpoint file created by save()
+            
+        Returns:
+            MADDPG: Initialized and restored MADDPG instance with trained weights
         """
+        # Load the saved checkpoint containing initialization and trained parameters
         save_dict = torch.load(filename)
+        
+        # Reconstruct the MADDPG instance using the stored initialization dictionary
+        # This recreates the network architecture identical to the saved model
         instance = cls(**save_dict['init_dict'])
         instance.init_dict = save_dict['init_dict']
-        for a, params in zip(instance.agents, save_dict['agent_params']):
-            a.load_params(params)
+        
+        # Restore trained weights for each agent
+        for agent, params in zip(instance.agents, save_dict['agent_params']):
+            agent.load_params(params)
+        
         return instance
