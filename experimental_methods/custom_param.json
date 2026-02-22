@@ -1,6 +1,6 @@
 {
     "dynamics_mode": "Polar",
-    "n_p": 3,
+    "n_p": 1,
     "n_e": 10,
     "pursuer_strategy": "input",
     "escaper_strategy": "input",

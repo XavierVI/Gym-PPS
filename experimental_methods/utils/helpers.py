@@ -25,9 +25,11 @@ def save_dos_and_doa(dos_and_doa_vals, filename):
     """
     # convert to a numpy array
     dos_and_doa_vals = np.array(dos_and_doa_vals)
+    header = "episode,dos,doa," + \
+        ",".join([f"reward_{i}" for i in range(dos_and_doa_vals.shape[1] - 3)])
     # save to CSV
     np.savetxt(filename, dos_and_doa_vals, delimiter=",", fmt="%.6f",
-               header="episode,dos,doa")
+               header=header)
 
 
 def create_run_directory(config):

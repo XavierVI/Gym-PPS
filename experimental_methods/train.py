@@ -194,6 +194,7 @@ def run_episode_maddpg(env, maddpg, config, agent_slices, buffers):
     
     positions = np.zeros((position_dims, num_agents, config.episode_length))
     headings = np.zeros((heading_dims, num_agents, config.episode_length))
+    agent_rewards = []
     
     # Rollout episode
     for step_idx in range(config.episode_length):
@@ -211,6 +212,7 @@ def run_episode_maddpg(env, maddpg, config, agent_slices, buffers):
         
         # Step environment
         next_observation, rewards, dones, infos = env.step(actions)
+        agent_rewards.append(rewards)
         
         # Store transitions in replay buffers
         buffers[0].push(observation, actions, rewards, next_observation, dones)  # predators
@@ -218,7 +220,7 @@ def run_episode_maddpg(env, maddpg, config, agent_slices, buffers):
         
         observation = next_observation
     
-    return positions, headings, num_agents, position_dims
+    return positions, headings, num_agents, position_dims, np.mean(agent_rewards, axis=0).squeeze()
 
 
 def train_maddpg_model(maddpg, config, buffers):
@@ -385,7 +387,7 @@ def run_maddpg(config):
     # Initialize models and buffers
     maddpg = initialize_maddpg_model(env, config, agent_slices)
     buffers = create_replay_buffers(env, config, agent_slices)
-    dos_and_doa_vals = [] # values over each episode
+    metrics = [] # values over each episode
     
     # Training loop
     for episode_idx in tqdm(range(0, config.n_episodes, config.n_rollout_threads)):
@@ -393,10 +395,12 @@ def run_maddpg(config):
               end='', flush=True)
         
         # Run episode and collect data
-        positions, headings, num_agents, position_dims = run_episode_maddpg(
+        positions, headings, num_agents, position_dims, rewards = run_episode_maddpg(
             env, maddpg, config, agent_slices, buffers
         )
         
+        # print("Rewards shape: ", rewards.shape)
+
         # Train on collected data
         train_maddpg_model(maddpg, config, buffers)
         
@@ -408,7 +412,10 @@ def run_maddpg(config):
         
         # Calculate metrics (optional - uncomment to enable)
         dos, doa = env.dos_and_doa_one_episode(positions, headings, num_agents, position_dims)
-        dos_and_doa_vals.append([episode_idx, dos, doa])
+        metric_row = [episode_idx, dos, doa]
+        # Extend the list with reward values
+        metric_row.extend(rewards.tolist())
+        metrics.append(metric_row)
         # print(f"DOS: {dos:.4f}, DOA: {doa:.4f}")
     
     # Print training summary
@@ -417,7 +424,7 @@ def run_maddpg(config):
 
     # save metrics
     save_dos_and_doa(
-        dos_and_doa_vals,
+        metrics,
         filename=run_dir / 'metrics.csv'
     )
 
@@ -444,7 +451,7 @@ def run_mappo(config):
         save_model_checkpoint(mappo, 'mappo', run_dir, episode_idx, config)
 
         dos, doa = env.dos_and_doa_one_episode(positions, headings, num_agents, position_dims)
-        dos_and_doa_vals.append([episode_idx, dos, doa])
+        dos_and_doa_vals.append([episode_idx, dos, doa, rewards])
 
     elapsed_time = time.time() - START_TIME
     print(f"\nTraining completed in {elapsed_time / 60:.2f} minutes")
