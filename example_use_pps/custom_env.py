@@ -24,7 +24,8 @@ class MyObs(CustomObservation):
 
         """
         # your code here
-        obs = obs[6:, :]
+        #print(obs)
+        #obs = obs[6:, :]
         return obs
         
 
