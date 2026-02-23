@@ -60,7 +60,7 @@ class MyEnv(PredatorPreySwarmCustomizer):
         super().__init__(env, args)
 
     def compute_speed(self):
-        speed = np.sqrt(self.env.dp[[0],:]**2 + self.env.dp[[1],:]**2)
+        speed = np.sqrt(self.env.unwrapped.dp[[0],:]**2 + self.env.unwrapped.dp[[1],:]**2)
         return speed
     
     def myfunc(self):
