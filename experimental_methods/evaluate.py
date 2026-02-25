@@ -19,6 +19,11 @@ from utils.helpers import (
 )
 from utils.device_management import move_model_to_device
 
+"""
+python evaluate.py --model_path ./models/eda03/run1/incremental/maddpg_model_ep1951.pt --video_output_dir ./evaluation_videos --video_fps 30 --n_episodes 5 --episode_length 1000 
+
+"""
+
 # ============================================================================
 # GLOBAL CONFIGURATION
 # ============================================================================

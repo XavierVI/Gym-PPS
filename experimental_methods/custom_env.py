@@ -68,6 +68,46 @@ class NJPEnvironment(PredatorPreySwarmCustomizer):
         DOA = np.sum(distances_h) / (2 * T * N)
         return DOS, DOA
         
+
+    def periodic_dos_and_doa(self, x, h, T, N, D):
+        """
+        x: [dims, agents, timesteps]
+        h: [dims, agents, timesteps]
+        L: box size (assumed 2.0 based on paper)
+        """
+        L = 2.0
+        total_dist = 0
+        total_align = 0
+
+        for t in range(T):
+            pos = x[:, :, t]  # [2, N]
+            head = h[:, :, t]  # [2, N]
+
+            for j in range(N):
+                # 1. Compute distances to all other agents using Minimum Image Convention
+                # Broadcasting: [2, 1] - [2, N] -> [2, N]
+                diff = pos[:, j:j+1] - pos
+
+                # Minimum Image Convention for Periodic Boundaries
+                diff = diff - L * np.round(diff / L)
+
+                dist_sq = np.sum(diff**2, axis=0)
+                dist_sq[j] = np.inf  # Ignore self
+
+                # 2. Find index k of the spatially nearest neighbor
+                k = np.argmin(dist_sq)
+                nearest_dist = np.sqrt(dist_sq[k])
+
+                # 3. Calculate metrics using the SAME neighbor k
+                total_dist += nearest_dist
+                total_align += np.linalg.norm(head[:, j] + head[:, k])
+
+        # Normalization according to Eq (2) and (3)
+        DOS = total_dist / (T * N * D)   # Eq (2)
+        DOA = total_align / (2 * T * N)  # Eq (3)
+
+        return DOS, DOA
+
     def dos_and_doa_one_episode(self, x, h, N, D):
         """
         Calculate Degree of Sparsity (DOS) and Degree of Alignment (DOA) for a single episode.
