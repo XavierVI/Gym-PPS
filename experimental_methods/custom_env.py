@@ -39,9 +39,9 @@ class NJPEnvironment(PredatorPreySwarmCustomizer):
         Args:
             x: Position array of shape [dimensions, agents, timesteps] - agent positions
             h: Heading array of shape [dimensions, agents, timesteps] - agent headings/velocities
-            T: Number of timesteps
-            N: Number of agents
-            D: Dimension of the position/heading space
+            T: episode length
+            N: is the total number which is equal to n1 for prey
+            D: is the environment size defined as the maximum possible distance for two agents.
             
         Returns:
             tuple: (DOS, DOA) where
@@ -77,8 +77,9 @@ class NJPEnvironment(PredatorPreySwarmCustomizer):
         Args:
             x: Position array of shape [dimensions, agents] - agent positions in this episode
             h: Heading array of shape [dimensions, agents] - agent headings/velocities in this episode
-            N: Number of agents
-            D: Dimension of the position/heading space
+            N: is the total number which is equal to n1 for prey
+            D: is the environment size defined as the maximum possible distance for two agents.
+            
             
         Returns:
             tuple: (DOS, DOA) where
