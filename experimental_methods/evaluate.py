@@ -15,7 +15,8 @@ from utils.helpers import (
     create_agent_slices, 
     create_replay_buffers, 
     create_argument_parser,
-    decay_exploration_noise
+    decay_exploration_noise,
+    save_dos_and_doa
 )
 from utils.device_management import move_model_to_device
 
@@ -122,6 +123,7 @@ def run(config):
     # Create output directory for videos
     video_dir = Path(config.video_output_dir) if config.video_output_dir else Path('.')
     video_dir.mkdir(parents=True, exist_ok=True)
+    metrics = []  # values over each episode
 
     
     # Evaluation loop
@@ -166,6 +168,24 @@ def run(config):
             buffers[1].push(obs, actions, rewards, next_obs, dones)  # prey
             
             obs = next_obs
+
+        # print(f"{positions.shape}, {headings.shape}")
+        print(f"Heading: {headings[:, 0, 0]}")
+        dos, doa = env.periodic_dos_and_doa(
+            positions[:, :, :],  # pass it prey positions and headings
+            headings[:, :, :],  # NOTE: agent slices doesn't work
+            config.episode_length,
+            env.num_prey,
+            np.sqrt(2)
+        )
+
+        # print(f"Environment size: {env.unwrapped.L}")
+        # print(f"\nEpisode {episode_idx + 1}: DOS={dos:.4f}, DOA={doa:.4f}, Rewards={rewards}")
+        metric_row = [ep_i, dos, doa]
+        # Extend the list with reward values
+        metric_row.extend(rewards.tolist())
+        metrics.append(metric_row)
+        print(f"DOS: {dos:.4f}, DOA: {doa:.4f}")
         
         # Save video
         video_filename = video_dir / f'evaluation_ep{ep_i}.gif'
@@ -177,6 +197,12 @@ def run(config):
     # Print summary
     elapsed_time = time.time() - START_TIME
     print(f"\nEvaluation completed in {elapsed_time / 60:.2f} minutes")
+
+    # save metrics
+    save_dos_and_doa(
+        metrics,
+        filename=config.video_output_dir / 'eval_metrics.csv'
+    )
 
 if __name__ == '__main__':
     parser = create_argument_parser()
