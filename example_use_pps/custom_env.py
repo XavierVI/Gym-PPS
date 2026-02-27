@@ -1,8 +1,9 @@
-import gym
-from gym import spaces
+import gymnasium as gym
+
+from gymnasium import spaces
 import numpy as np
-from gym.wrappers import PredatorPreySwarmCustomizer
-from gym.wrappers import CustomObservation, CustomReward, CustomAction
+from gym_pps.wrappers import PredatorPreySwarmCustomizer
+from gym_pps.wrappers.pps_wrapper import CustomObservation, CustomReward, CustomAction
 
 """Define your own Observation and Reward in this script:
 You may use the following properties to define your observation/reward functions:
@@ -23,7 +24,8 @@ class MyObs(CustomObservation):
 
         """
         # your code here
-        obs = obs[6:, :]
+        #print(obs)
+        #obs = obs[6:, :]
         return obs
         
 
@@ -58,7 +60,7 @@ class MyEnv(PredatorPreySwarmCustomizer):
         super().__init__(env, args)
 
     def compute_speed(self):
-        speed = np.sqrt(self.env.dp[[0],:]**2 + self.env.dp[[1],:]**2)
+        speed = np.sqrt(self.env.unwrapped.dp[[0],:]**2 + self.env.unwrapped.dp[[1],:]**2)
         return speed
     
     def myfunc(self):
