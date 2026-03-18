@@ -19,6 +19,8 @@ from utils.helpers import (
     save_dos_and_doa
 )
 from utils.device_management import move_model_to_device
+from utils.helpers import create_run_directory
+
 
 """
 python evaluate.py --model_path ./models/eda03/run1/incremental/maddpg_model_ep1951.pt --video_output_dir ./evaluation_videos --video_fps 30 --n_episodes 5 --episode_length 1000 
@@ -106,6 +108,7 @@ def save_episode_video(frames, output_path, fps=30):
 def run(config):
     """Run evaluation of a trained model."""
     # Setup
+    run_dir, log_dir = create_run_directory(config)
     env = setup_environment()
     agent_slices = create_agent_slices(env)
     buffers = create_replay_buffers(env, config, agent_slices)
@@ -188,8 +191,8 @@ def run(config):
         print(f"DOS: {dos:.4f}, DOA: {doa:.4f}")
         
         # Save video
-        video_filename = video_dir / f'evaluation_ep{ep_i}.gif'
-        save_episode_video(frames, str(video_filename), fps=config.video_fps)
+        # video_filename = video_dir / f'evaluation_ep{ep_i}.gif'
+        # save_episode_video(frames, str(video_filename), fps=config.video_fps)
         
         # Decay exploration noise
         decay_exploration_noise(model)
@@ -201,7 +204,7 @@ def run(config):
     # save metrics
     save_dos_and_doa(
         metrics,
-        filename=config.video_output_dir / 'eval_metrics.csv'
+        filename=run_dir / 'eval_metrics.csv'
     )
 
 if __name__ == '__main__':
