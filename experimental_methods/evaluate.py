@@ -206,9 +206,10 @@ def run(config):
 
     # save metrics
     if env.num_predator > 0:
+        metrics_name = f'eval_metrics_{config.seed}.csv'
         save_dos_and_doa(
             metrics,
-            filename=os.path.join(config.model_path, 'eval_metrics.csv')
+            filename=os.path.join(config.model_path, metrics_name)
         )
     else:
         save_dos_and_doa(

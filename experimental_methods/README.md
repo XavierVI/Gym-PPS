@@ -16,11 +16,7 @@ python train.py --seed=42 --env_id=training_20_prey --n_episodes=2001 --episode_
 ## Evaluation Commands
 
 ```bash
-python evaluate.py --seed=42 --model_path=./training_10_prey/run_n --n_episodes=100 --episode_length=100
+python evaluate.py --seed=42 --model_path=./models/training_10_prey/run_n --n_episodes=100 --episode_length=100
 
 
-python evaluate.py --seed=42 --n_episodes=100 --episode_length=100 --model_path=./training_5_prey/run_n
-
-
-python evaluate.py --seed=42 --n_episodes=100 --episode_length=100 --model_path=./training_20_prey/run_n
 ```
