@@ -120,7 +120,7 @@ def run(config):
     
     # Load model
     print(f"Loading {config.model_type} model from: {config.model_path}")
-    model = load_model_checkpoint(config.model_path, config.model_type)
+    model = load_model_checkpoint(os.path.join(config.model_path, 'incremental', 'maddpg_model_ep2001.pt'), config.model_type)
     move_model_to_device(model, DEVICE)
     
     # Create output directory for videos
@@ -146,7 +146,8 @@ def run(config):
         positions = np.zeros((pos_dim, num_agents, config.episode_length))
         headings = np.zeros((heading_dim, num_agents, config.episode_length))
         frames = []
-        
+        agent_rewards = []
+
         # Run episode
         for step_idx in range(config.episode_length):
             # Capture frame for video
@@ -165,6 +166,7 @@ def run(config):
             
             # Step environment
             next_obs, rewards, dones, infos = env.step(actions)
+            agent_rewards.append(rewards)
             
             # Store in buffers
             buffers[0].push(obs, actions, rewards, next_obs, dones)  # predators
@@ -173,10 +175,10 @@ def run(config):
             obs = next_obs
 
         # print(f"{positions.shape}, {headings.shape}")
-        print(f"Heading: {headings[:, 0, 0]}")
+        # print(f"Heading: {headings[:, 0, 0]}")
         dos, doa = env.periodic_dos_and_doa(
-            positions[:, :, :],  # pass it prey positions and headings
-            headings[:, :, :],  # NOTE: agent slices doesn't work
+            positions[:, env.num_predator:, :],  # pass it prey positions and headings
+            headings[:, env.num_predator:, :],  # NOTE: agent slices doesn't work
             config.episode_length,
             env.num_prey,
             np.sqrt(2)
@@ -186,9 +188,10 @@ def run(config):
         # print(f"\nEpisode {episode_idx + 1}: DOS={dos:.4f}, DOA={doa:.4f}, Rewards={rewards}")
         metric_row = [ep_i, dos, doa]
         # Extend the list with reward values
-        metric_row.extend(rewards.tolist())
+        agent_rewards = np.mean(agent_rewards, axis=0).squeeze()  # average reward per agent across the episode
+        metric_row.extend(agent_rewards.tolist())
         metrics.append(metric_row)
-        print(f"DOS: {dos:.4f}, DOA: {doa:.4f}")
+        # print(f"DOS: {dos:.4f}, DOA: {doa:.4f}")
         
         # Save video
         # video_filename = video_dir / f'evaluation_ep{ep_i}.gif'
@@ -202,10 +205,16 @@ def run(config):
     print(f"\nEvaluation completed in {elapsed_time / 60:.2f} minutes")
 
     # save metrics
-    save_dos_and_doa(
-        metrics,
-        filename=run_dir / 'eval_metrics.csv'
-    )
+    if env.num_predator > 0:
+        save_dos_and_doa(
+            metrics,
+            filename=os.path.join(config.model_path, 'eval_metrics.csv')
+        )
+    else:
+        save_dos_and_doa(
+            metrics,
+            filename=os.path.join(config.model_path, 'herding_test_metrics.csv')
+        )
 
 if __name__ == '__main__':
     parser = create_argument_parser()

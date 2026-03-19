@@ -188,10 +188,10 @@ def run(config):
         # dos, doa = env.dos_and_doa_one_episode(positions, headings, env.num_prey, np.sqrt(2))
 
         # print(f"{positions.shape}, {headings.shape}")
-        print(f"Heading: {headings[:, 0, 0]}")
+        # print(f"Heading: {headings[:, 0, 0]}")
         dos, doa = env.periodic_dos_and_doa(
-            positions[:, :, :], # pass it prey positions and headings
-            headings[:, :, :], # NOTE: agent slices doesn't work
+            positions[:, env.num_predator:, :], # pass it prey positions and headings
+            headings[:, env.num_predator:, :], # NOTE: agent slices doesn't work
             config.episode_length,
             env.num_prey,
             np.sqrt(2)
@@ -203,7 +203,7 @@ def run(config):
         # Extend the list with reward values
         metric_row.extend(rewards.tolist())
         metrics.append(metric_row)
-        print(f"DOS: {dos:.4f}, DOA: {doa:.4f}")
+        # print(f"DOS: {dos:.4f}, DOA: {doa:.4f}")
     
     # Print training summary
     elapsed_time = time.time() - START_TIME
