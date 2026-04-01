@@ -438,8 +438,8 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
     
         if self.viewer is None:
             import gym_pps.envs.rendering as rendering
-            self.viewer = rendering.Viewer(500, 500, save_frame=self._save_frame, frame_dir=self._frame_dir)
-            self.viewer.set_bounds(-1, 1, -1, 1.)
+            self.viewer = rendering.Viewer(self._window_size, self._window_size, save_frame=self._save_frame, frame_dir=self._frame_dir)
+            self.viewer.set_bounds(-self._L - 0.05, self._L + 0.05, -self._L - 0.05, self._L + 0.05)
             
             agents = []
             self.tf = []

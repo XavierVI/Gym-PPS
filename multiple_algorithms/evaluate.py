@@ -15,17 +15,9 @@ from utils.helpers import (
     create_agent_slices, 
     create_replay_buffers, 
     create_argument_parser,
-    decay_exploration_noise,
-    save_dos_and_doa
+    decay_exploration_noise
 )
 from utils.device_management import move_model_to_device
-from utils.helpers import create_run_directory
-
-
-"""
-python evaluate.py --model_path ./models/eda03/run1/incremental/maddpg_model_ep1951.pt --video_output_dir ./evaluation_videos --video_fps 30 --n_episodes 5 --episode_length 1000 
-
-"""
 
 # ============================================================================
 # GLOBAL CONFIGURATION
@@ -108,7 +100,6 @@ def save_episode_video(frames, output_path, fps=30):
 def run(config):
     """Run evaluation of a trained model."""
     # Setup
-    run_dir, log_dir = create_run_directory(config)
     env = setup_environment()
     agent_slices = create_agent_slices(env)
     buffers = create_replay_buffers(env, config, agent_slices)
@@ -120,13 +111,12 @@ def run(config):
     
     # Load model
     print(f"Loading {config.model_type} model from: {config.model_path}")
-    model = load_model_checkpoint(os.path.join(config.model_path, 'incremental', 'maddpg_model_ep2001.pt'), config.model_type)
+    model = load_model_checkpoint(config.model_path, config.model_type)
     move_model_to_device(model, DEVICE)
     
     # Create output directory for videos
     video_dir = Path(config.video_output_dir) if config.video_output_dir else Path('.')
     video_dir.mkdir(parents=True, exist_ok=True)
-    metrics = []  # values over each episode
 
     
     # Evaluation loop
@@ -146,8 +136,7 @@ def run(config):
         positions = np.zeros((pos_dim, num_agents, config.episode_length))
         headings = np.zeros((heading_dim, num_agents, config.episode_length))
         frames = []
-        agent_rewards = []
-
+        
         # Run episode
         for step_idx in range(config.episode_length):
             # Capture frame for video
@@ -166,36 +155,16 @@ def run(config):
             
             # Step environment
             next_obs, rewards, dones, infos = env.step(actions)
-            agent_rewards.append(rewards)
             
             # Store in buffers
             buffers[0].push(obs, actions, rewards, next_obs, dones)  # predators
             buffers[1].push(obs, actions, rewards, next_obs, dones)  # prey
             
             obs = next_obs
-
-        # print(f"{positions.shape}, {headings.shape}")
-        # print(f"Heading: {headings[:, 0, 0]}")
-        dos, doa = env.periodic_dos_and_doa(
-            positions[:, env.num_predator:, :],  # pass it prey positions and headings
-            headings[:, env.num_predator:, :],  # NOTE: agent slices doesn't work
-            config.episode_length,
-            env.num_prey,
-            np.sqrt(2)
-        )
-
-        # print(f"Environment size: {env.unwrapped.L}")
-        # print(f"\nEpisode {episode_idx + 1}: DOS={dos:.4f}, DOA={doa:.4f}, Rewards={rewards}")
-        metric_row = [ep_i, dos, doa]
-        # Extend the list with reward values
-        agent_rewards = np.mean(agent_rewards, axis=0).squeeze()  # average reward per agent across the episode
-        metric_row.extend(agent_rewards.tolist())
-        metrics.append(metric_row)
-        # print(f"DOS: {dos:.4f}, DOA: {doa:.4f}")
         
         # Save video
-        # video_filename = video_dir / f'evaluation_ep{ep_i}.gif'
-        # save_episode_video(frames, str(video_filename), fps=config.video_fps)
+        video_filename = video_dir / f'evaluation_ep{ep_i}.gif'
+        save_episode_video(frames, str(video_filename), fps=config.video_fps)
         
         # Decay exploration noise
         decay_exploration_noise(model)
@@ -203,19 +172,6 @@ def run(config):
     # Print summary
     elapsed_time = time.time() - START_TIME
     print(f"\nEvaluation completed in {elapsed_time / 60:.2f} minutes")
-
-    # save metrics
-    if env.num_predator > 0:
-        metrics_name = f'eval_metrics_{config.seed}.csv'
-        save_dos_and_doa(
-            metrics,
-            filename=os.path.join(config.model_path, metrics_name)
-        )
-    else:
-        save_dos_and_doa(
-            metrics,
-            filename=os.path.join(config.model_path, 'herding_test_metrics.csv')
-        )
 
 if __name__ == '__main__':
     parser = create_argument_parser()

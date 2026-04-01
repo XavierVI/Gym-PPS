@@ -10,7 +10,7 @@ import argparse
 # ============================================================================
 def save_model_checkpoint(model, model_name, run_dir, episode_idx, config):
     """Save model checkpoint if save interval reached."""
-    if (episode_idx + 1) % config.save_interval < config.n_rollout_threads:
+    if episode_idx % config.save_interval < config.n_rollout_threads:
         checkpoint_dir = run_dir / 'incremental'
         os.makedirs(checkpoint_dir, exist_ok=True)
 
@@ -34,7 +34,7 @@ def save_dos_and_doa(dos_and_doa_vals, filename):
 
 def create_run_directory(config):
     """Create the run directory and return the path."""
-    model_dir = Path('./models') / config.env_id
+    model_dir = Path('./models') / config.env_id / config.algo
 
     if not model_dir.exists():
         current_run = 'run1'
@@ -85,13 +85,7 @@ def create_replay_buffers(env, config, agent_slices):
 
 
 def create_agent_slices(env):
-    """
-    Create slices to separate predators from prey in agent list.
-    
-    Predators are assumed to be indexed from 0 to num_predator-1,
-    and prey from num_predator to num_predator+num_prey-1.
-    
-    """
+    """Create slices to separate predators from prey in agent list."""
     predator_slice = slice(0, env.num_predator)
     prey_slice = slice(env.num_predator, env.num_predator + env.num_prey)
     return [predator_slice, prey_slice]
@@ -130,7 +124,7 @@ def create_argument_parser():
                         help="Batch size for training")
     
     # Neural network config
-    parser.add_argument("--hidden_dim", default=64, type=int,
+    parser.add_argument("--hidden_dim", default=128, type=int,
                         help="Hidden dimension for neural networks")
     
     # Learning rates
@@ -148,6 +142,9 @@ def create_argument_parser():
                         help="Target network update rate")
     
     # Algorithm config
+    parser.add_argument("--algo", default="maddpg", type=str,
+                        choices=['maddpg', 'mappo', 'ddpg'],
+                        help="Algorithm to train")
     # NOTE: only have to keep these so MADDPG code doesn't break
     parser.add_argument("--agent_alg", default="MADDPG", type=str,
                         choices=['MADDPG', 'DDPG'],
@@ -178,7 +175,5 @@ def create_argument_parser():
     parser.add_argument("--min_epsilon", default=0.05, type=float)
     parser.add_argument("--noise_decay", default=5e-5, type=float)
     parser.add_argument("--epsilon_decay", default=5e-5, type=float)
-    parser.add_argument("--multiple_seeds", action="store_true",
-                        help="Run multiple 10 seeds instead of a single seed")
     
     return parser

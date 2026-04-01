@@ -11,6 +11,7 @@ class PredatorPreySwarmEnvParam(gym.Env):
 
     # Environment
     _is_periodic = True
+    _window_size = 500
     
     # Control Strategy
     _pursuer_strategy = 'input'
@@ -67,7 +68,7 @@ class PredatorPreySwarmEnvParam(gym.Env):
         _p_o = np.array([[-0.5,0.5],[0,0]])
 
     ## Venue
-    _L = 1
+    _L = 2
     _k_ball = 50       # sphere-sphere contact stiffness  N/m 
     # _c_ball = 5      # sphere-sphere contact damping N/m/s
     _k_wall = 100      # sphere-wall contact stiffness  N/m

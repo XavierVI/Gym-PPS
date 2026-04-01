@@ -50,8 +50,8 @@ class IDDPG(object):
             )
             for params in agent_init_params
         ]
-        # print("Initialized IDDPG with agents:")
-        # print(len(self.agents))
+        print("Initialized IDDPG with agents:")
+        print(len(self.agents))
         self.agent_init_params = agent_init_params
         self.gamma = gamma
         self.tau = tau

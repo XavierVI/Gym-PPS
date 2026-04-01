@@ -5,6 +5,13 @@ import numpy as np
 class PredatorPreySwarmEnvProp(PredatorPreySwarmEnvParam):
     
     ## Useful parameters to customize observations and reward functions
+    @property
+    def window_size(self):
+        return self._window_size
+
+    @window_size.setter
+    def window_size(self, value):
+        self._window_size = value
 
     @property
     def p(self):
