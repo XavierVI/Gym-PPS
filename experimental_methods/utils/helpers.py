@@ -10,7 +10,7 @@ import argparse
 # ============================================================================
 def save_model_checkpoint(model, model_name, run_dir, episode_idx, config):
     """Save model checkpoint if save interval reached."""
-    if episode_idx % config.save_interval < config.n_rollout_threads:
+    if (episode_idx + 1) % config.save_interval < config.n_rollout_threads:
         checkpoint_dir = run_dir / 'incremental'
         os.makedirs(checkpoint_dir, exist_ok=True)
 
@@ -178,5 +178,7 @@ def create_argument_parser():
     parser.add_argument("--min_epsilon", default=0.05, type=float)
     parser.add_argument("--noise_decay", default=5e-5, type=float)
     parser.add_argument("--epsilon_decay", default=5e-5, type=float)
+    parser.add_argument("--multiple_seeds", action="store_true",
+                        help="Run multiple 10 seeds instead of a single seed")
     
     return parser

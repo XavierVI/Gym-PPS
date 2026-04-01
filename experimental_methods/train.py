@@ -220,4 +220,22 @@ def run(config):
 if __name__ == '__main__':
     parser = create_argument_parser()
     config = parser.parse_args()
-    run(config)
+
+    if config.multiple_seeds:
+        root_seed = 42
+        ss = np.random.SeedSequence(root_seed)
+
+        # Spawn 10 independent child seeds (one for each replicate of your 2^k design)
+        child_seeds = ss.spawn(10)
+
+        # To get the actual integer to pass to your MARL env:
+        seeds = [s.generate_state(1)[0] for s in child_seeds]
+        print(f"Training {len(seeds)} replicates with seeds: {seeds}")
+        
+        for seed in seeds:
+            print(f"\n=== Starting training with seed {seed} ===")
+            config.seed = seed
+            run(config)
+
+    else:
+        run(config)
