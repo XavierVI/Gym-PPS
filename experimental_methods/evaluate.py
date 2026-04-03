@@ -120,7 +120,7 @@ def run(config):
     
     # Load model
     print(f"Loading {config.model_type} model from: {config.model_path}")
-    model = load_model_checkpoint(os.path.join(config.model_path, 'incremental', 'maddpg_model_ep2001.pt'), config.model_type)
+    model = load_model_checkpoint(os.path.join(config.model_path, 'incremental', 'maddpg_model_ep2000.pt'), config.model_type)
     move_model_to_device(model, DEVICE)
     
     # Create output directory for videos
@@ -145,15 +145,15 @@ def run(config):
         
         positions = np.zeros((pos_dim, num_agents, config.episode_length))
         headings = np.zeros((heading_dim, num_agents, config.episode_length))
-        frames = []
+        # frames = []
         agent_rewards = []
 
         # Run episode
         for step_idx in range(config.episode_length):
             # Capture frame for video
-            frame = env.unwrapped.render(mode='rgb_array')
-            if frame is not None:
-                frames.append(frame)
+            # frame = env.unwrapped.render(mode='rgb_array')
+            # if frame is not None:
+            #     frames.append(frame)
             
             # Store positions and headings
             positions[:, :, step_idx] = env.unwrapped.p
@@ -206,7 +206,7 @@ def run(config):
 
     # save metrics
     if env.num_predator > 0:
-        metrics_name = f'eval_metrics_{config.seed}.csv'
+        metrics_name = f'eval_metrics_seed-{config.seed}.csv'
         save_dos_and_doa(
             metrics,
             filename=os.path.join(config.model_path, metrics_name)
@@ -214,7 +214,7 @@ def run(config):
     else:
         save_dos_and_doa(
             metrics,
-            filename=os.path.join(config.model_path, 'herding_test_metrics.csv')
+            filename=os.path.join(config.model_path, 'random_drift_eval_metrics.csv')
         )
 
 if __name__ == '__main__':
@@ -233,4 +233,37 @@ if __name__ == '__main__':
 
     config = parser.parse_args()
 
-    run(config)
+    if config.multiple_seeds:
+        root_seed = 42
+        ss = np.random.SeedSequence(root_seed)
+
+        # Spawn 10 independent child seeds (one for each replicate of your 2^k design)
+        child_seeds = ss.spawn(10)
+
+        # To get the actual integer to pass to your MARL env:
+        seeds = [s.generate_state(1)[0] for s in child_seeds]
+        print(f"Training {len(seeds)} replicates with seeds: {seeds}")
+
+        # get run directories for each seed
+        run_dirs = os.listdir(config.model_path)
+        base_path = config.model_path
+        print(run_dirs)
+        
+        # zero predators evaluation
+        config.n_predator = 0
+        for seed, run_dir in zip(seeds, run_dirs):
+            print(f"\n=== Starting training with seed {seed} ===")
+            config.seed = seed
+            config.model_path = os.path.join(base_path, run_dir)
+            run(config)
+
+        # evaluation with 3 predators
+        config.n_predator = 3
+        for seed, run_dir in zip(seeds, run_dirs):
+            print(f"\n=== Starting training with seed {seed} ===")
+            config.seed = seed
+            config.model_path = os.path.join(base_path, run_dir)
+            run(config)
+    
+    else:
+        run(config)

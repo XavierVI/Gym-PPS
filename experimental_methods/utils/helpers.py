@@ -180,5 +180,7 @@ def create_argument_parser():
     parser.add_argument("--epsilon_decay", default=5e-5, type=float)
     parser.add_argument("--multiple_seeds", action="store_true",
                         help="Run multiple 10 seeds instead of a single seed")
+    parser.add_argument("--custom_param_name", default="custom_param.json", type=str,
+                        help="Filename for custom environment parameters.")
     
     return parser

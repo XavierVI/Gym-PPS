@@ -36,10 +36,14 @@ START_TIME = time.time()
 # ENVIRONMENT SETUP
 # ============================================================================
 
-def setup_environment():
+def setup_environment(config=None):
     """Initialize and wrap the Predator-Prey Swarm environment."""
     scenario_name = 'PredatorPreySwarm-v0'
-    custom_param_name = 'custom_param.json'
+
+    if config is None:
+        custom_param_name = 'custom_param.json'
+    else:
+        custom_param_name = config.custom_param_name
 
     environment = gym.make(scenario_name)
     custom_param_path = os.path.dirname(
@@ -151,7 +155,7 @@ def run(config):
     # Setup
     run_dir, log_dir = create_run_directory(config)
     initialize_seeds_and_threads(config)
-    env = setup_environment()
+    env = setup_environment(config)
     agent_slices = create_agent_slices(env)
     
     # Initialize models and buffers
