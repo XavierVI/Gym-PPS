@@ -1,4 +1,5 @@
 import gymnasium as gym
+import imageio
 import gym_pps
 from custom_env import NJPEnvironment
 import argparse
@@ -83,6 +84,28 @@ def initialize_maddpg_model(env, config, agent_slices):
 
 
 # ============================================================================
+# VIDEO SAVING
+# ============================================================================
+
+def save_episode_video(frames, output_path, fps=30):
+    """Save collected frames as a gif or video file."""
+    if len(frames) == 0:
+        print("No frames to save")
+        return False
+
+    os.makedirs(os.path.dirname(output_path) if os.path.dirname(
+        output_path) else '.', exist_ok=True)
+
+    try:
+        imageio.mimsave(output_path, frames, fps=fps)
+        print(f"Video saved to {output_path}")
+        return True
+    except Exception as e:
+        print(f"Failed to save video to {output_path}: {e}")
+        return False
+
+
+# ============================================================================
 # EPISODE EXECUTION
 # ============================================================================
 def run_episode_maddpg(env, maddpg, config, agent_slices, buffers):
@@ -100,11 +123,13 @@ def run_episode_maddpg(env, maddpg, config, agent_slices, buffers):
     positions = np.zeros((position_dims, num_agents, config.episode_length))
     headings = np.zeros((heading_dims, N_h, config.episode_length))
     agent_rewards = []
+    frames = []
 
     # Rollout episode
     for step_idx in range(config.episode_length):
-        if config.render and (step_idx % config.render_interval == 0):
-            env.render()
+        if config.render:
+            frame = env.unwrapped.render(mode='rgb_array')
+            frames.append(frame)
 
         # Store current state
         positions[:, :, step_idx] = env.unwrapped.p
@@ -129,7 +154,7 @@ def run_episode_maddpg(env, maddpg, config, agent_slices, buffers):
 
         observation = next_observation
 
-    return positions, headings, num_agents, position_dims, np.mean(agent_rewards, axis=0).squeeze()
+    return positions, headings, num_agents, position_dims, np.mean(agent_rewards, axis=0).squeeze(), frames
 
 
 def train_maddpg_model(maddpg, config, buffers):
@@ -167,6 +192,9 @@ def run(config):
     # Initialize models and buffers
     maddpg = initialize_maddpg_model(env, config, agent_slices)
     buffers = create_replay_buffers(env, config, agent_slices)
+    # Create output directory for videos
+    video_dir = Path('.') / run_dir / 'videos'
+    video_dir.mkdir(parents=True, exist_ok=True)
     metrics = []  # values over each episode
 
     # Training loop
@@ -176,7 +204,7 @@ def run(config):
 
         # Run episode and collect data
         # NOTE: positions and headings are returned as (2, num_agents, episode_length)
-        positions, headings, num_agents, position_dims, rewards = run_episode_maddpg(
+        positions, headings, num_agents, position_dims, rewards, frames = run_episode_maddpg(
             env, maddpg, config, agent_slices, buffers
         )
 
@@ -218,6 +246,10 @@ def run(config):
         metric_row.extend(rewards.tolist())
         metrics.append(metric_row)
         # print(f"DOS: {dos:.4f}, DOA: {doa:.4f}")
+
+        if config.render and len(frames) > 0 and episode_idx % config.render_interval == 0:
+            video_path = video_dir / f"episode_{episode_idx + 1}.mp4"
+            save_episode_video(frames, video_path, fps=60)
 
     # Print training summary
     elapsed_time = time.time() - START_TIME

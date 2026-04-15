@@ -12,6 +12,6 @@
     "m_e": 1.0,
     "size_p": 0.06,
     "size_e": 0.035,
-    "L": 2.0,
-    "window_size": 500
+    "L": 1.0,
+    "window_size": 512
 }

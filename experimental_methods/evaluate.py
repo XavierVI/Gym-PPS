@@ -149,15 +149,16 @@ def run(config):
         
         positions = np.zeros((pos_dim, num_agents, config.episode_length))
         headings = np.zeros((heading_dim, num_agents, config.episode_length))
-        # frames = []
+        frames = []
         agent_rewards = []
 
         # Run episode
         for step_idx in range(config.episode_length):
             # Capture frame for video
-            # frame = env.unwrapped.render(mode='rgb_array')
-            # if frame is not None:
-            #     frames.append(frame)
+            
+            if config.render:
+                frame = env.unwrapped.render(mode='rgb_array')
+                frames.append(frame)
             
             # Store positions and headings
             positions[:, :, step_idx] = env.unwrapped.p
@@ -200,8 +201,9 @@ def run(config):
         # print(f"DOS: {dos:.4f}, DOA: {doa:.4f}")
         
         # Save video
-        # video_filename = video_dir / f'evaluation_ep{ep_i}.gif'
-        # save_episode_video(frames, str(video_filename), fps=config.video_fps)
+        if len(frames) > 0:
+            video_path = video_dir / f"episode_{ep_i + 1}.mp4"
+            save_episode_video(frames, video_path, fps=10)
         
         # Decay exploration noise
         # decay_exploration_noise(model)
