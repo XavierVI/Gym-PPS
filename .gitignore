@@ -43,3 +43,4 @@ vizdoom.ini
 *.csv
 *.txt
 *.png
+dataset_*
