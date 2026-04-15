@@ -105,6 +105,20 @@ def save_episode_video(frames, output_path, fps=30):
         return False
 
 
+def save_timestep_dos_doa(rows, filename):
+    """Save DOS/DOA rows with header: episode,timestep,dos,doa."""
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    data = np.asarray(rows, dtype=float)
+    np.savetxt(
+        filename,
+        data,
+        delimiter=",",
+        fmt="%.6f",
+        header="episode,timestep,dos,doa",
+        comments=""
+    )
+
+
 # ============================================================================
 # EVALUATION
 # ============================================================================
@@ -130,6 +144,7 @@ def run(config):
     # Create output directory for videos
     video_dir = Path(config.video_output_dir) if config.video_output_dir else Path('.')
     video_dir.mkdir(parents=True, exist_ok=True)
+    all_timestep_metrics = []
     metrics = []  # values over each episode
 
     
@@ -199,11 +214,25 @@ def run(config):
         metric_row.extend(agent_rewards.tolist())
         metrics.append(metric_row)
         # print(f"DOS: {dos:.4f}, DOA: {doa:.4f}")
+
+        # Compute DOS/DOA at each timestep for this episode.
+        prey_positions = positions[:, env.num_predator:, :]
+        prey_headings = headings[:, env.num_predator:, :]
+        for step_idx in range(config.episode_length):
+            step_dos, step_doa = env.periodic_dos_and_doa(
+                prey_positions[:, :, step_idx:step_idx + 1],
+                prey_headings[:, :, step_idx:step_idx + 1],
+                1,
+                env.num_prey,
+                1 / np.sqrt(2),
+                L=env.unwrapped.L
+            )
+            all_timestep_metrics.append([ep_i, step_idx, step_dos, step_doa])
         
         # Save video
-        if len(frames) > 0:
-            video_path = video_dir / f"episode_{ep_i + 1}.mp4"
-            save_episode_video(frames, video_path, fps=10)
+        if config.render and len(frames) > 0 and ep_i % config.video_save_interval == 0:
+            video_path = video_dir / f"episode_{ep_i}.mp4"
+            save_episode_video(frames, video_path, fps=config.video_fps)
         
         # Decay exploration noise
         # decay_exploration_noise(model)
@@ -226,6 +255,12 @@ def run(config):
             metrics,
             filename=os.path.join(config.model_path, 'eval_metrics_zero_predators.csv')
         )
+
+    # Save one CSV containing all episodes and timesteps for DOS/DOA.
+    save_timestep_dos_doa(
+        all_timestep_metrics,
+        filename=os.path.join(config.model_path, 'eval_timestep_metrics_all.csv')
+    )
 
 if __name__ == '__main__':
     parser = create_argument_parser()

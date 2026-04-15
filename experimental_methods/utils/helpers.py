@@ -164,8 +164,10 @@ def create_argument_parser():
     # Visualization
     parser.add_argument("--render", action="store_true",
                         help="Enable env.render(). On headless servers leave this OFF, or run with xvfb-run.")
-    parser.add_argument("--render_interval", default=500, type=int,
-                        help="Render every N timesteps (only when --render is set)")
+    parser.add_argument("--video_save_interval", default=50, type=int,
+                        help="Save video every N episodes (only when --render is set)")
+    parser.add_argument("--video_fps", default=60, type=int,
+                        help="Frames per second for saved videos")
 
     # Unused parameters (kept for backwards compatibility)
     parser.add_argument("--n_exploration_eps",
