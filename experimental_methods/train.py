@@ -305,7 +305,7 @@ if __name__ == '__main__':
     config = parser.parse_args()
 
     if config.multiple_seeds:
-        root_seed = 101
+        root_seed = 42
         ss = np.random.SeedSequence(root_seed)
 
         # Spawn 10 independent child seeds (one for each replicate of your 2^k design)

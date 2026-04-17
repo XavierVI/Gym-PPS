@@ -7,7 +7,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=32
 #SBATCH --time=48:00:00
-#SBATCH --partition=general
+#SBATCH --partition=l40s
 #SBATCH --mem=32G
 #SBATCH --gpus-per-node=1
 #SBATCH --mail-type=END,FAIL
