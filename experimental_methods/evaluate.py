@@ -12,8 +12,8 @@ from algorithms import ddpg as ddpg_mod
 from pathlib import Path
 from tqdm import tqdm
 from utils.helpers import (
-    create_agent_slices, 
-    create_replay_buffers, 
+    create_agent_slices,
+    create_replay_buffers,
     create_argument_parser,
     decay_exploration_noise,
     save_dos_and_doa
@@ -65,22 +65,24 @@ def load_model_checkpoint(model_path, model_type):
     """Load a trained model from checkpoint."""
     if not os.path.exists(model_path):
         raise FileNotFoundError(f"Model checkpoint not found at {model_path}")
-    
+
     model_type_upper = model_type.upper()
-    
+
     if model_type_upper == "MADDPG":
         model = MADDPG.init_from_save(model_path)
     elif model_type_upper == "DDPG":
         # Try IDDPG first, then DDPG
-        DDPGCls = getattr(ddpg_mod, "IDDPG", None) or getattr(ddpg_mod, "DDPG", None)
+        DDPGCls = getattr(ddpg_mod, "IDDPG", None) or getattr(
+            ddpg_mod, "DDPG", None)
         if DDPGCls is None:
-            raise ImportError("Cannot find IDDPG or DDPG class in algorithms/ddpg.py")
+            raise ImportError(
+                "Cannot find IDDPG or DDPG class in algorithms/ddpg.py")
         model = DDPGCls.init_from_save(model_path)
     elif model_type_upper == "MAPPO":
         model = MAPPO.init_from_save(model_path)
     else:
         raise ValueError(f"Unknown model type: {model_type_upper}")
-    
+
     return model
 
 
@@ -93,9 +95,10 @@ def save_episode_video(frames, output_path, fps=30):
     if len(frames) == 0:
         print("No frames to save")
         return False
-    
-    os.makedirs(os.path.dirname(output_path) if os.path.dirname(output_path) else '.', exist_ok=True)
-    
+
+    os.makedirs(os.path.dirname(output_path) if os.path.dirname(
+        output_path) else '.', exist_ok=True)
+
     try:
         imageio.mimsave(output_path, frames, fps=fps)
         print(f"Video saved to {output_path}")
@@ -130,38 +133,47 @@ def run(config):
     env = setup_environment(config)
     agent_slices = create_agent_slices(env)
     buffers = create_replay_buffers(env, config, agent_slices)
-    
+
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
     if not USE_CUDA:
         torch.set_num_threads(config.n_training_threads)
-    
+
     # Load model
     print(f"Loading {config.model_type} model from: {config.model_path}")
-    model = load_model_checkpoint(os.path.join(config.model_path, 'incremental', 'maddpg_model_ep2000.pt'), config.model_type)
+    checkpoint_path = os.path.join(config.model_path, 'incremental')
+    checkpoint_files = [f for f in os.listdir(
+        checkpoint_path) if f.endswith('.pt')]
+    if not checkpoint_files:
+        raise FileNotFoundError(f"No .pt files found in {checkpoint_path}")
+    latest_checkpoint = max(checkpoint_files, key=lambda f: int(
+        ''.join(filter(str.isdigit, f))))
+    model_checkpoint_path = os.path.join(checkpoint_path, latest_checkpoint)
+    print(f"Found checkpoint: {model_checkpoint_path}")
+    model = load_model_checkpoint(model_checkpoint_path, config.model_type)
     move_model_to_device(model, DEVICE)
-    
+
     # Create output directory for videos
-    video_dir = Path(config.video_output_dir) if config.video_output_dir else Path('.')
+    video_dir = Path(
+        config.video_output_dir) if config.video_output_dir else Path('.')
     video_dir.mkdir(parents=True, exist_ok=True)
     all_timestep_metrics = []
     metrics = []  # values over each episode
 
-    
     # Evaluation loop
     for ep_i in tqdm(range(0, config.n_episodes, config.n_rollout_threads)):
-        print(f"\rEpisodes {ep_i + 1}-{ep_i + 1 + config.n_rollout_threads} of {config.n_episodes}", 
+        print(f"\rEpisodes {ep_i + 1}-{ep_i + 1 + config.n_rollout_threads} of {config.n_episodes}",
               end='', flush=True)
-        
+
         obs, _ = env.reset()
         model.prep_rollouts(device=DEVICE)
         # model.scale_noise(model.noise, model.epsilon)
         # model.reset_noise()
-        
+
         # Initialize storage
         pos_dim, num_agents = np.shape(env.unwrapped.p)
         heading_dim, _ = np.shape(env.unwrapped.heading)
-        
+
         positions = np.zeros((pos_dim, num_agents, config.episode_length))
         headings = np.zeros((heading_dim, num_agents, config.episode_length))
         frames = []
@@ -170,38 +182,44 @@ def run(config):
         # Run episode
         for step_idx in range(config.episode_length):
             # Capture frame for video
-            
+
             if config.render:
                 frame = env.unwrapped.render(mode='rgb_array')
                 frames.append(frame)
-            
+
             # Store positions and headings
             positions[:, :, step_idx] = env.unwrapped.p
             headings[:, :, step_idx] = env.unwrapped.heading
-            
+
             # Get action from model
-            torch_obs = torch.as_tensor(obs, dtype=torch.float32, device=DEVICE)
+            torch_obs = torch.as_tensor(
+                obs, dtype=torch.float32, device=DEVICE)
             torch_actions = model.step(torch_obs, agent_slices, explore=False)
-            actions = np.column_stack([ac.data.cpu().numpy() for ac in torch_actions])
-            
+            actions = np.column_stack([ac.data.cpu().numpy()
+                                      for ac in torch_actions])
+
             # Step environment
             next_obs, rewards, dones, infos = env.step(actions)
             agent_rewards.append(rewards)
-            
+
             # Store in buffers
-            buffers[0].push(obs, actions, rewards, next_obs, dones)  # predators
+            buffers[0].push(obs, actions, rewards,
+                            next_obs, dones)  # predators
             buffers[1].push(obs, actions, rewards, next_obs, dones)  # prey
-            
+
             obs = next_obs
 
         # print(f"{positions.shape}, {headings.shape}")
         # print(f"Heading: {headings[:, 0, 0]}")
         dos, doa = env.periodic_dos_and_doa(
-            positions[:, env.num_predator:, :],  # pass it prey positions and headings
-            headings[:, env.num_predator:, :],  # NOTE: agent slices doesn't work
+            # pass it prey positions and headings
+            positions[:, env.num_predator:, :],
+            # NOTE: agent slices doesn't work
+            headings[:, env.num_predator:, :],
             config.episode_length,
             env.num_prey,
-            1 / np.sqrt(2), # for edge length of 1.0
+            # for edge length of 1.0
+            1/np.sqrt(2) if env.unwrapped.L == 1.0 else np.sqrt(2),
             # np.sqrt(2),
             L=env.unwrapped.L
         )
@@ -210,7 +228,8 @@ def run(config):
         # print(f"\nEpisode {episode_idx + 1}: DOS={dos:.4f}, DOA={doa:.4f}, Rewards={rewards}")
         metric_row = [ep_i, dos, doa]
         # Extend the list with reward values
-        agent_rewards = np.mean(agent_rewards, axis=0).squeeze()  # average reward per agent across the episode
+        # average reward per agent across the episode
+        agent_rewards = np.mean(agent_rewards, axis=0).squeeze()
         metric_row.extend(agent_rewards.tolist())
         metrics.append(metric_row)
         # print(f"DOS: {dos:.4f}, DOA: {doa:.4f}")
@@ -224,19 +243,19 @@ def run(config):
                 prey_headings[:, :, step_idx:step_idx + 1],
                 1,
                 env.num_prey,
-                1 / np.sqrt(2),
+                1/np.sqrt(2) if env.unwrapped.L == 1.0 else np.sqrt(2),
                 L=env.unwrapped.L
             )
             all_timestep_metrics.append([ep_i, step_idx, step_dos, step_doa])
-        
+
         # Save video
         if config.render and len(frames) > 0 and ep_i % config.video_save_interval == 0:
             video_path = video_dir / f"episode_{ep_i}.mp4"
             save_episode_video(frames, video_path, fps=config.video_fps)
-        
+
         # Decay exploration noise
         # decay_exploration_noise(model)
-    
+
     # Print summary
     elapsed_time = time.time() - START_TIME
     print(f"\nEvaluation completed in {elapsed_time / 60:.2f} minutes")
@@ -249,32 +268,36 @@ def run(config):
             metrics,
             filename=os.path.join(config.model_path, metrics_name)
         )
+        save_timestep_dos_doa(
+            all_timestep_metrics,
+            filename=os.path.join(
+                config.model_path, f'{metrics_name.replace(".csv", "")}_timesteps.csv')
+        )
     else:
         print("Zero predators evaluation completed. Saving metrics...")
+        metrics_name = f'eval_metrics_zero_predators.csv'
         save_dos_and_doa(
             metrics,
-            filename=os.path.join(config.model_path, 'eval_metrics_zero_predators.csv')
+            filename=os.path.join(config.model_path, metrics_name)
+        )
+        save_timestep_dos_doa(
+            all_timestep_metrics,
+            filename=os.path.join(
+                config.model_path, f'{metrics_name.replace(".csv", "")}_timesteps.csv')
         )
 
     # Save one CSV containing all episodes and timesteps for DOS/DOA.
-    save_timestep_dos_doa(
-        all_timestep_metrics,
-        filename=os.path.join(config.model_path, 'eval_timestep_metrics_all.csv')
-    )
+
 
 if __name__ == '__main__':
     parser = create_argument_parser()
-    
+
     # Evaluation-specific arguments
-    parser.add_argument("--model_type", default="maddpg", type=str, 
+    parser.add_argument("--model_type", default="maddpg", type=str,
                         choices=['maddpg', 'mappo', 'ddpg'],
                         help="Type of model to load")
     parser.add_argument("--model_path", type=str, required=True,
-                        help="Path to trained model checkpoint (e.g., ./models/model_1/run1/incremental/maddpg_model_ep201.pt)")
-    parser.add_argument("--video_output_dir", default="./evaluation_videos", type=str,
-                        help="Directory to save evaluation videos")
-    parser.add_argument("--video_fps", default=30, type=int,
-                        help="Frames per second for saved video")
+                        help="Path to trained model checkpoint (e.g., ./models/model_1/)")
 
     config = parser.parse_args()
 
@@ -293,12 +316,12 @@ if __name__ == '__main__':
         run_dirs = os.listdir(config.model_path)
         base_path = config.model_path
         print(run_dirs)
-        
+
         for seed, run_dir in zip(seeds, run_dirs):
             print(f"\n=== Starting training with seed {seed} ===")
             config.seed = seed
             config.model_path = os.path.join(base_path, run_dir)
             run(config)
-    
+
     else:
         run(config)

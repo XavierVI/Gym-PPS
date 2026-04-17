@@ -166,6 +166,8 @@ def create_argument_parser():
                         help="Enable env.render(). On headless servers leave this OFF, or run with xvfb-run.")
     parser.add_argument("--video_save_interval", default=50, type=int,
                         help="Save video every N episodes (only when --render is set)")
+    parser.add_argument("--video_output_dir", default="./evaluation_videos", type=str,
+                        help="Directory to save evaluation videos")
     parser.add_argument("--video_fps", default=60, type=int,
                         help="Frames per second for saved videos")
 

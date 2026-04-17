@@ -177,13 +177,16 @@ def train_maddpg_model(maddpg, config, buffers):
 
     for _ in range(num_training_steps):
         maddpg.prep_training(device=DEVICE)
-
+        # print(maddpg.nagents)
         for agent_idx in range(maddpg.nagents):
             if len(buffers[agent_idx]) >= config.batch_size:
                 obs_batch, actions_batch, rewards_batch, next_obs_batch, dones_batch = buffers[agent_idx].sample(
                     config.batch_size,
                     to_gpu=USE_CUDA
                 )
+                # print(
+                #     f"[train] agent {agent_idx} rewards_batch min={rewards_batch.min():.2f} max={rewards_batch.max():.2f} mean={rewards_batch.mean():.2f}")
+                # print(rewards_batch.shape)
                 maddpg.update(obs_batch, actions_batch, rewards_batch,
                               next_obs_batch, dones_batch, agent_idx)
 
@@ -249,9 +252,9 @@ def run(config):
             headings[:, env.num_predator:, :],
             config.episode_length,
             env.num_prey,
-            1 / np.sqrt(2),  # for edge length of 1.0
+            1/np.sqrt(2) if env.unwrapped.L == 1.0 else np.sqrt(2),
             # np.sqrt(2), # for edge length of 2.0,
-            L=1.0
+            L=env.unwrapped.L
         )
 
         # print(f"Environment size: {env.unwrapped.L}")
@@ -271,8 +274,8 @@ def run(config):
                 prey_headings[:, :, step_idx:step_idx + 1],
                 1,
                 env.num_prey,
-                1 / np.sqrt(2),
-                L=1.0
+                1/np.sqrt(2) if env.unwrapped.L == 1.0 else np.sqrt(2),
+                L=env.unwrapped.L
             )
             all_timestep_metrics.append([episode_idx, step_idx, step_dos, step_doa])
 
@@ -302,7 +305,7 @@ if __name__ == '__main__':
     config = parser.parse_args()
 
     if config.multiple_seeds:
-        root_seed = 42
+        root_seed = 101
         ss = np.random.SeedSequence(root_seed)
 
         # Spawn 10 independent child seeds (one for each replicate of your 2^k design)
