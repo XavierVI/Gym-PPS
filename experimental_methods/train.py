@@ -252,8 +252,7 @@ def run(config):
             headings[:, env.num_predator:, :],
             config.episode_length,
             env.num_prey,
-            1/np.sqrt(2) if env.unwrapped.L == 1.0 else np.sqrt(2),
-            # np.sqrt(2), # for edge length of 2.0,
+            D=np.sqrt(2) * env.unwrapped.L,
             L=env.unwrapped.L
         )
 
@@ -274,7 +273,7 @@ def run(config):
                 prey_headings[:, :, step_idx:step_idx + 1],
                 1,
                 env.num_prey,
-                1/np.sqrt(2) if env.unwrapped.L == 1.0 else np.sqrt(2),
+                D=np.sqrt(2) * env.unwrapped.L,
                 L=env.unwrapped.L
             )
             all_timestep_metrics.append([episode_idx, step_idx, step_dos, step_doa])
