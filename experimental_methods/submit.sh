@@ -21,15 +21,15 @@ T=500
 
 if [ $SLURM_ARRAY_TASK_ID -eq 1 ]; then
   echo "Training with 5 prey"
-  python -u train.py --multiple_seeds --env_id=training_5_prey_3_fov --n_episodes=$E --episode_length=$T --hidden_dim=64 --save_interval=500 --custom_param_name=config/training_5_prey_3_fov.json
+  python -u train.py --multiple_seeds --env_id=training_5_prey_0-707_fov --n_episodes=$E --episode_length=$T --hidden_dim=64 --save_interval=500 --custom_param_name=config/training_5_prey_0-707_fov.json
 
-  python -u train.py --multiple_seeds --env_id=training_5_prey_8_fov --n_episodes=$E --episode_length=$T --hidden_dim=64 --save_interval=500 --custom_param_name=config/training_5_prey_8_fov.json
+  python -u train.py --multiple_seeds --env_id=training_5_prey_2-828_fov --n_episodes=$E --episode_length=$T --hidden_dim=64 --save_interval=500 --custom_param_name=config/training_5_prey_2-828_fov.json
 
 elif [ $SLURM_ARRAY_TASK_ID -eq 2 ]; then
   echo "Training with 20 prey"
-  python -u train.py --multiple_seeds --env_id=training_20_prey_3_fov --n_episodes=$E --episode_length=$T --hidden_dim=64 --save_interval=500 --custom_param_name=config/training_20_prey_3_fov.json
+  python -u train.py --multiple_seeds --env_id=training_20_prey_0-707_fov --n_episodes=$E --episode_length=$T --hidden_dim=64 --save_interval=500 --custom_param_name=config/training_20_prey_0-707_fov.json
 
-  python -u train.py --multiple_seeds --env_id=training_20_prey_8_fov --n_episodes=$E --episode_length=$T --hidden_dim=64 --save_interval=500 --custom_param_name=config/training_20_prey_8_fov.json
+  python -u train.py --multiple_seeds --env_id=training_20_prey_2-828_fov --n_episodes=$E --episode_length=$T --hidden_dim=64 --save_interval=500 --custom_param_name=config/training_20_prey_2-828_fov.json
 else
   python -u train.py --multiple_seeds --env_id=baseline --n_episodes=$E --episode_length=$T --hidden_dim=64 --save_interval=500 --custom_param_name=config/baseline.json
 fi

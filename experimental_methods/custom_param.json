@@ -2,10 +2,11 @@
     "dynamics_mode": "Polar",
     "n_p": 3,
     "n_e": 5,
+    "FoV_e": 3,
     "pursuer_strategy": "input",
     "escaper_strategy": "input",
     "is_periodic": true,
-    "render_traj": true,
+    "render_traj": false,
     "save_frame": false,
 
     "m_p": 1.0,

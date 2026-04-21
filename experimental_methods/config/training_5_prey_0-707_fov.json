@@ -2,7 +2,7 @@
     "dynamics_mode": "Polar",
     "n_p": 3,
     "n_e": 5,
-    "FoV_e": 8,
+    "FoV_e": 0.707,
     "pursuer_strategy": "input",
     "escaper_strategy": "input",
     "is_periodic": true,
@@ -13,6 +13,6 @@
     "m_e": 1.0,
     "size_p": 0.06,
     "size_e": 0.035,
-    "L": 1.0,
+    "L": 2.0,
     "window_size": 512
 }
