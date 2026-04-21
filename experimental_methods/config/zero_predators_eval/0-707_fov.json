@@ -9,6 +9,11 @@
     "render_traj": false,
     "save_frame": false,
 
+    "topo_n_e2p": 6.0,
+    "topo_n_e2e": 6.0,
+    "topo_n_p2e": 6.0,
+    "topo_n_p2p": 6.0,
+
     "m_p": 1.0,
     "m_e": 1.0,
     "size_p": 0.06,
