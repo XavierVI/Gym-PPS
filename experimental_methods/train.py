@@ -318,6 +318,8 @@ if __name__ == '__main__':
             print(f"\n=== Starting training with seed {seed} ===")
             config.seed = seed
             run(config)
+            # disable rendering for subsequent runs
+            config.render = False
 
     else:
         run(config)

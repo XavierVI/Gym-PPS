@@ -320,6 +320,8 @@ if __name__ == '__main__':
             config.seed = seed
             config.model_path = os.path.join(base_path, run_dir)
             run(config)
+            # only save videos for the first seed
+            config.render = False
 
     else:
         run(config)
