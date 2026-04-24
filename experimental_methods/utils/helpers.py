@@ -8,13 +8,16 @@ import argparse
 # ============================================================================
 # SAVING DATA
 # ============================================================================
+
+
 def save_model_checkpoint(model, model_name, run_dir, episode_idx, config):
     """Save model checkpoint if save interval reached."""
     if (episode_idx + 1) % config.save_interval < config.n_rollout_threads:
         checkpoint_dir = run_dir / 'incremental'
         os.makedirs(checkpoint_dir, exist_ok=True)
 
-        model.save(checkpoint_dir / f'{model_name}_model_ep{episode_idx + 1}.pt')
+        model.save(checkpoint_dir /
+                   f'{model_name}_model_ep{episode_idx + 1}.pt')
 
 
 def save_dos_and_doa(dos_and_doa_vals, filename):
@@ -51,7 +54,6 @@ def create_run_directory(config):
     os.makedirs(log_dir, exist_ok=True)
 
     return run_dir, log_dir
-
 
 
 def decay_exploration_noise(model):
@@ -106,13 +108,13 @@ def create_argument_parser():
     parser = argparse.ArgumentParser(
         description="MADDPG training for Predator-Prey Swarm environment"
     )
-    
+
     # Model and environment config
     parser.add_argument("--env_id", default="model_1", type=str,
                         help="Environment ID for model directory")
     parser.add_argument("--seed", default=0, type=int,
                         help="Random seed for reproducibility")
-    
+
     # Training parameters
     parser.add_argument("--n_episodes", default=201, type=int,
                         help="Total number of episodes to train")
@@ -122,23 +124,23 @@ def create_argument_parser():
                         help="Number of parallel rollout threads")
     parser.add_argument("--n_training_threads", default=10, type=int,
                         help="Number of training threads (CPU only)")
-    
+
     # Replay buffer and batch config
     parser.add_argument("--buffer_length", default=int(5e5), type=int,
                         help="Maximum replay buffer size")
     parser.add_argument("--batch_size", default=256, type=int,
                         help="Batch size for training")
-    
+
     # Neural network config
     parser.add_argument("--hidden_dim", default=64, type=int,
                         help="Hidden dimension for neural networks")
-    
+
     # Learning rates
     parser.add_argument("--lr_actor", default=1e-4, type=float,
                         help="Actor learning rate")
     parser.add_argument("--lr_critic", default=1e-3, type=float,
                         help="Critic learning rate")
-    
+
     # Exploration and noise config
     parser.add_argument("--epsilon", default=0.1, type=float,
                         help="Initial exploration epsilon")
@@ -146,7 +148,7 @@ def create_argument_parser():
                         help="Initial action noise scale")
     parser.add_argument("--tau", default=0.01, type=float,
                         help="Target network update rate")
-    
+
     # Algorithm config
     # NOTE: only have to keep these so MADDPG code doesn't break
     parser.add_argument("--agent_alg", default="MADDPG", type=str,
@@ -158,18 +160,24 @@ def create_argument_parser():
     # Checkpoint saving
     parser.add_argument("--save_interval", default=50, type=int,
                         help="Save model every N episodes")
-    
+
     # Visualization
     parser.add_argument("--render", action="store_true",
                         help="Enable env.render(). On headless servers leave this OFF, or run with xvfb-run.")
-    parser.add_argument("--render_interval", default=20, type=int,
-                        help="Render every N episodes (only when --render is set)")
-    
-    # Unused parameters (kept for backwards compatibility)
-    parser.add_argument("--n_exploration_eps", default=25000, type=int, help="(Unused)")
-    parser.add_argument("--init_noise_scale", default=0.3, type=float, help="(Unused)")
-    parser.add_argument("--final_noise_scale", default=0.0, type=float, help="(Unused)")
+    parser.add_argument("--video_save_interval", default=50, type=int,
+                        help="Save video every N episodes (only when --render is set)")
+    parser.add_argument("--video_output_dir", default="./evaluation_videos", type=str,
+                        help="Directory to save evaluation videos")
+    parser.add_argument("--video_fps", default=60, type=int,
+                        help="Frames per second for saved videos")
 
+    # Unused parameters (kept for backwards compatibility)
+    parser.add_argument("--n_exploration_eps",
+                        default=25000, type=int, help="(Unused)")
+    parser.add_argument("--init_noise_scale", default=0.3,
+                        type=float, help="(Unused)")
+    parser.add_argument("--final_noise_scale", default=0.0,
+                        type=float, help="(Unused)")
 
     parser.add_argument("--n_updates_per_episode", default=50, type=int)
 
@@ -182,5 +190,5 @@ def create_argument_parser():
                         help="Run multiple 10 seeds instead of a single seed")
     parser.add_argument("--custom_param_name", default="custom_param.json", type=str,
                         help="Filename for custom environment parameters.")
-    
+
     return parser

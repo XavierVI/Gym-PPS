@@ -2,6 +2,7 @@ import gymnasium as gym
 from gym_pps.wrappers import PredatorPreySwarmCustomizer
 import numpy as np
 
+
 class Agent:
     def __init__(self, adversary=False):
         self.adversary = adversary
@@ -23,10 +24,11 @@ class NJPEnvironment(PredatorPreySwarmCustomizer):
         self.num_prey = env.n_e
         self.num_predator = env.n_p
         # Create agent objects: prey agents followed by predator (adversary) agents
-        self.agents = [Agent() for _ in range(self.num_prey)] + [Agent(adversary=True) for _ in range(self.num_predator)]
+        self.agents = [Agent() for _ in range(self.num_prey)] + \
+            [Agent(adversary=True) for _ in range(self.num_predator)]
         self.agent_types = ['adversary', 'agent']
-        self.action_space=env.action_space
-        self.observation_space=env.observation_space
+        self.action_space = env.action_space
+        self.observation_space = env.observation_space
         print('NJP functions added successfully.')
 
     def dos_and_doa(self, x, h, T, N, D):
@@ -67,15 +69,13 @@ class NJPEnvironment(PredatorPreySwarmCustomizer):
         DOS = np.sum(distances) / (T * N * D)
         DOA = np.sum(distances_h) / (2 * T * N)
         return DOS, DOA
-        
 
-    def periodic_dos_and_doa(self, x, h, T, N, D):
+    def periodic_dos_and_doa(self, x, h, T, N, D, L=2.0):
         """
         x: [dims, agents, timesteps]
         h: [dims, agents, timesteps]
-        L: box size (assumed 2.0 based on paper)
+        L: box size
         """
-        L = 2.0
         total_dist = 0
         total_align = 0
 
@@ -144,7 +144,7 @@ class NJPEnvironment(PredatorPreySwarmCustomizer):
         DOS = np.sum(distances) / (N * D)
         DOA = np.sum(distances_h) / (2 * N)
         return DOS, DOA
-    
+
     def _find_nearest_neighbors_DOS(self, x, i):
         """
         Find the nearest neighbor distance for Degree of Sparsity (position-based metric).
@@ -166,7 +166,7 @@ class NJPEnvironment(PredatorPreySwarmCustomizer):
                 distances.append(np.linalg.norm(x[:, i] - x[:, j]))
 
         return np.min(distances)
-    
+
     def _find_nearest_neighbors_DOA(self, x, i):
         """
         Find the nearest neighbor distance for Degree of Alignment (heading-based metric).

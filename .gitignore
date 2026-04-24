@@ -20,6 +20,7 @@ __pycache__/
 *.sublime-workspace
 
 logs/
+*.out
 
 .ipynb_checkpoints
 ghostdriver.log
@@ -43,3 +44,5 @@ vizdoom.ini
 *.csv
 *.txt
 *.png
+dataset_*
+*.mp4

@@ -2,17 +2,22 @@
     "dynamics_mode": "Polar",
     "n_p": 3,
     "n_e": 10,
-    "FoV_e": 5,
+    "FoV_e": 1.414,
     "pursuer_strategy": "input",
     "escaper_strategy": "input",
     "is_periodic": true,
     "render_traj": false,
     "save_frame": false,
 
+    "topo_n_e2p": 6,
+    "topo_n_e2e": 6,
+    "topo_n_p2e": 6,
+    "topo_n_p2p": 6,
+
     "m_p": 1.0,
     "m_e": 1.0,
     "size_p": 0.06,
     "size_e": 0.035,
-    "L": 2.0,
-    "window_size": 500
+    "L": 1.0,
+    "window_size": 512
 }

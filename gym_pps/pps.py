@@ -4,6 +4,7 @@ from gymnasium import spaces
 from gym_pps.putils import seeding
 from .putils import *
 import numpy as np
+import collections
 
 class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
     
@@ -67,6 +68,9 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
         self._n_p = n_p # number of predators
         self._n_e = n_e # number of prey
         self._n_o = 0 # number of obstacles?
+        self._penalize_spin = False       # flag, same pattern as your others
+        self._prey_spin_penalty_weight = 0.5
+        self._predator_spin_penalty_weight = 0.5
         self.viewer = None
         self.seed()
         self.__reinit__()
@@ -148,7 +152,16 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
             # self._theta = np.pi * np.zeros((1, self._n_peo))
             self._heading = np.concatenate((np.cos(self._theta), np.sin(self._theta)), axis=0)
 
-            
+
+        # used to punish agents for spinning in place
+        self._ang_vel_history_p = collections.deque(
+            maxlen=20)  # shape (n_p,) per step
+        # self._ang_vel_history_e = collections.deque(maxlen=20)  # shape (n_e,) per step
+        
+        self._acc_history_p = collections.deque(
+            maxlen=20)  # shape (n_p,) per step
+        # self._acc_history_e = collections.deque(maxlen=20)  # shape (n_e,) per step
+
         return self._get_obs(), self._get_info()
 
 
@@ -227,7 +240,6 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
       
 
     def _get_reward(self, a):
-
         reward_p =   5.0 * self._is_collide_b2b[self._n_p:self._n_pe, :self._n_p].sum(axis=0, keepdims=True).astype(float)                      
         reward_e = - 1.0 * self._is_collide_b2b[self._n_p:self._n_pe, :self._n_p].sum(axis=1, keepdims=True).astype(float).reshape(1,self.n_e)  
 
@@ -253,7 +265,32 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
         
         if self._penalize_collide_walls and self._is_periodic == False:
             reward_p -= 1 * self.is_collide_b2w[:, :self._n_p].sum(axis=0, keepdims=True)            
-            reward_e -= 1 * self.is_collide_b2w[:, self._n_p:self._n_pe].sum(axis=0, keepdims=True)  
+            reward_e -= 1 * self.is_collide_b2w[:, self._n_p:self._n_pe].sum(axis=0, keepdims=True)
+
+        if self._penalize_spin:
+            # a[1] is linear acceleration for all agents
+            self._ang_vel_history_p.append(np.abs(a[[0], :self._n_p]))        # (1, n_p)
+            # self._ang_vel_history_e.append(np.abs(a[[0], self._n_p:self._n_pe]))  # (1, n_e)
+            self._acc_history_p.append(np.abs(a[[1], :self._n_p]))        # (1, n_p)
+            # self._acc_history_e.append(np.abs(a[[1], self._n_p:self._n_pe]))  # (1, n_e)
+
+            if len(self._ang_vel_history_p) == self._ang_vel_history_p.maxlen:
+                # print("buffer full, start penalizing spin!")
+                sustained_ang_vel_p = np.mean(np.concatenate(
+                    list(self._ang_vel_history_p), axis=0), axis=0, keepdims=True)  # (1, n_p)
+                # sustained_ang_vel_e = np.mean(np.concatenate(
+                #     list(self._ang_vel_history_e), axis=0), axis=0, keepdims=True)  # (1, n_e)
+                sustained_acc_p = np.mean(np.concatenate(
+                    list(self._acc_history_p), axis=0), axis=0, keepdims=True)  # (1, n_p)
+                # sustained_acc_e = np.mean(np.concatenate(
+                #     list(self._acc_history_e), axis=0), axis=0, keepdims=True)  # (1, n_e)
+                # encourage linear acceleration
+                reward_p += self._predator_spin_penalty_weight * sustained_acc_p
+                # reward_e += self._prey_spin_penalty_weight * sustained_acc_e
+
+                # punish sustained angular velocity
+                reward_p -= self._predator_spin_penalty_weight * sustained_ang_vel_p
+                # reward_e -= self._prey_spin_penalty_weight * sustained_ang_vel_e
 
         if self._reward_sharing_mode == 'sharing_mean':
             reward_p[:] = np.mean(reward_p) 
@@ -267,6 +304,14 @@ class PredatorPreySwarmEnv(PredatorPreySwarmEnvProp):
             print('reward mode error !!')
 
         reward = np.concatenate((reward_p, reward_e), axis=1) 
+
+        # if self._penalize_spin and len(self._ang_vel_history_p) == self._ang_vel_history_p.maxlen:
+        #     print(
+        #         f"[spin] sustained_ang_vel_p={sustained_ang_vel_p}, penalty={self._spin_penalty_weight * sustained_ang_vel_p}")
+        #     print(
+        #         f"[spin] reward_p before sharing={reward_p}, reward_e before sharing={reward_e}")
+
+        # print(f"[reward] final reward={reward}")
         return reward
 
 
