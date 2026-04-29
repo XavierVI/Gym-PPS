@@ -142,12 +142,17 @@ def run(config):
     # Load model
     print(f"Loading {config.model_type} model from: {config.model_path}")
     checkpoint_path = os.path.join(config.model_path, 'incremental')
-    checkpoint_files = [f for f in os.listdir(
-        checkpoint_path) if f.endswith('.pt')]
+    checkpoint_files = [f for f in os.listdir(checkpoint_path) if f.endswith('.pt')]
     if not checkpoint_files:
-        raise FileNotFoundError(f"No .pt files found in {checkpoint_path}")
-    latest_checkpoint = max(checkpoint_files, key=lambda f: int(
-        ''.join(filter(str.isdigit, f))))
+        raise FileNotFoundError(
+            f"No .pt files found in {checkpoint_path}. Available files: {os.listdir(checkpoint_path)}"
+        )
+
+    def checkpoint_sort_key(filename):
+        digits = ''.join(filter(str.isdigit, filename))
+        return int(digits) if digits else -1
+
+    latest_checkpoint = max(checkpoint_files, key=checkpoint_sort_key)
     model_checkpoint_path = os.path.join(checkpoint_path, latest_checkpoint)
     print(f"Found checkpoint: {model_checkpoint_path}")
     model = load_model_checkpoint(model_checkpoint_path, config.model_type)
@@ -312,6 +317,8 @@ if __name__ == '__main__':
 
         # get run directories for each seed
         run_dirs = os.listdir(config.model_path)
+        # filter out directories that don't match the pattern "run{number}"
+        run_dirs = [d for d in run_dirs if d.startswith("run")]
         base_path = config.model_path
         print(run_dirs)
 
